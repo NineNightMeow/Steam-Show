@@ -1,8 +1,9 @@
-# SteamCommunity-ShowCase-ProducerVer 0.1.0 - Produced By KuriNayuki & Hapy
+# SteamCommunity-ShowCase-ProducerVer 0.1.0 - 
 
-Designed for the equipment of steam showcase.
+这是个人队伍的第一个python项目，目前这只是一个基于PySide6 + OpenCV的GUI工具，用于将视频转换为创意工坊展柜的5个GIF，今后将随着个人水平的进步不断更新，用更加简洁美观的UI交互界面实现各种更加复杂高效的各种Steam展框的制作。
 
-这是一个基于PySide6 + OpenCV的GUI工具，用于将视频转换为GIF
+Produced By KuriNayuki & Hapy
+
  水平切割 GIF
  修改 GIF 文件的最后 16 进制字节
  进度条可视化处理状态
@@ -23,7 +24,9 @@ pip install -r requirements.txt
 
 ------------------------------Division Line-----------------------------------
 
-This is a GUI tool based on PySide6 + OpenCV, used for converting videos to GIFs
+This is the first python project of my team. Currently, it is just a GUI tool based on PySide6 + OpenCV, used to convert videos into five GIFs of the creative Workshop display cabinet. In the future, it will be continuously updated as my skills improve. Create various more complex and efficient Steam display frames with a more concise and aesthetically pleasing UI interaction interface.
+
+Designed for the equipment of steam showcase.
 
 Horizontal cut GIF
 
