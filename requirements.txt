@@ -1,0 +1,5 @@
+pyside6
+opencv-python
+numpy
+pillow
+pyinstaller
