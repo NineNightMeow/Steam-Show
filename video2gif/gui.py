@@ -1,143 +1,355 @@
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QFileDialog,
-    QLineEdit, QMessageBox, QProgressBar, QComboBox
-) 
-from PySide6.QtCore import Qt, QTimer
+    QApplication,
+    QWidget,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QHBoxLayout,
+    QFileDialog,
+    QLineEdit,
+    QMessageBox,
+)
 from video2gif.processor import VideoProcessor
-import os
-#作案工具
+
+
+# 作案工具
 class Video2GifApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("MP4文件一键转steam展框小工具-By Kuri&Hapy")
+        self.setWindowTitle("Steam 展框制作工具")
         self.setGeometry(300, 300, 600, 800)
+        self.setStyleSheet(
+            """
+            QWidget {
+                background-color: #f5f5f5;
+                font-family: "Microsoft YaHei", sans-serif;
+            }
+            
+            QLabel {
+                color: #333333;
+                font-size: 14px;
+            }
+            
+            QLabel[class="title"] {
+                color: #364c63;
+                font-size: 18px;
+                font-weight: bold;
+            }
+            
+            QLineEdit {
+                padding: 8px;
+                border: 1px solid #bdc3c7;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+            }
+            
+            QComboBox {
+                padding: 8px;
+                border: 1px solid #bdc3c7;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+            }
+            
+            QPushButton {
+                padding: 8px 15px;
+                border-radius: 4px;
+                color: white;
+                background-color: #364c63;
+            }
+            
+            QPushButton:hover {
+                background-color: #243342;
+            }
+
+            QPushButton:disabled {
+                color: rgba(255, 255, 255, 0.5);
+                background-color: rgba(54, 76, 99, 0.5);
+            }
+
+            QPushButton[class="start"] {
+                padding: 15px;
+            }
+        """
+        )
 
         layout = QVBoxLayout(self)
 
-        self.video_label = QLabel("选择视频文件:")
-        layout.addWidget(self.video_label)
-        self.video_path = QLineEdit()
-        layout.addWidget(self.video_path)
-        self.video_button = QPushButton("浏览")
-        layout.addWidget(self.video_button)
-        self.video_button.clicked.connect(self.load_video)
+        # 文件选择
+        file_select_layout = QVBoxLayout()
 
-        self.output_label = QLabel("选择输出目录:")
-        layout.addWidget(self.output_label)
+        file_select_title = QLabel("选择文件")
+        file_select_title.setProperty("class", "title")
+
+        input_layout = QVBoxLayout()
+        input_path_layout = QHBoxLayout()
+        output_layout = QVBoxLayout()
+        output_path_layout = QHBoxLayout()
+
+        # 视频文件选择
+        self.input_label = QLabel("视频文件")
+        self.input_path = QLineEdit()
+        self.input_button = QPushButton("浏览")
+        self.input_button.clicked.connect(self.load_video)
+
+        input_path_layout.addWidget(self.input_path)
+        input_path_layout.addWidget(self.input_button)
+
+        input_layout.addWidget(self.input_label)
+        input_layout.addLayout(input_path_layout)
+
+        # 输出目录选择
+        self.output_label = QLabel("输出目录")
         self.output_path = QLineEdit()
-        layout.addWidget(self.output_path)
         self.output_button = QPushButton("浏览")
-        layout.addWidget(self.output_button)
         self.output_button.clicked.connect(self.load_output_dir)
 
-        self.width_label = QLabel("目标宽度 (px):")
-        layout.addWidget(self.width_label)
+        output_path_layout.addWidget(self.output_path)
+        output_path_layout.addWidget(self.output_button)
+
+        output_layout.addWidget(self.output_label)
+        output_layout.addLayout(output_path_layout)
+
+        file_select_layout.addWidget(file_select_title)
+        file_select_layout.addLayout(input_layout)
+        file_select_layout.addLayout(output_layout)
+
+        layout.addLayout(file_select_layout)
+
+        # 参数设置
+        args_layout = QVBoxLayout()
+
+        args_title = QLabel("设置参数")
+        args_title.setProperty("class", "title")
+
+        target_width_layout = QHBoxLayout()
+        split_parts_layout = QHBoxLayout()
+        max_size_mb_layout = QHBoxLayout()
+        hex_value_layout = QHBoxLayout()
+        fps_layout = QHBoxLayout()
+        filename_prefix_layout = QHBoxLayout()
+        full_gif_name_layout = QHBoxLayout()
+
+        self.width_label = QLabel("目标宽度 (px)")
         self.width_input = QLineEdit("630")
-        layout.addWidget(self.width_input)
 
-        self.split_label = QLabel("GIF 分割份数:")
-        layout.addWidget(self.split_label)
+        self.split_label = QLabel("GIF 分割份数")
         self.split_input = QLineEdit("5")
-        layout.addWidget(self.split_input)
 
-        self.max_size_label = QLabel("最大单个 GIF 大小 (MB):")
-        layout.addWidget(self.max_size_label)
+        self.max_size_label = QLabel("最大单个 GIF 大小 (MB)")
         self.max_size_input = QLineEdit("5")
-        layout.addWidget(self.max_size_input)
-        
-        self.full_gif_name_label = QLabel("完整 GIF 文件名称:")
-        layout.addWidget(self.full_gif_name_label)
-        self.full_gif_name_input = QLineEdit("output.gif")
-        layout.addWidget(self.full_gif_name_input)
 
-        self.filename_label = QLabel("GIF 文件名前缀:")
-        layout.addWidget(self.filename_label)
-        self.filename_input = QLineEdit("split_gif")
-        layout.addWidget(self.filename_input)
-        
-        self.hex_label =QLabel("修改 GIF 末位 16 进制数 (0-255) (默认21即可):")
-        layout.addWidget(self.hex_label)
+        self.hex_label = QLabel("修改 GIF 末位 16 进制数 (0-255) (默认21即可)")
         self.hex_input = QLineEdit("21")
-        layout.addWidget(self.hex_input)
-        
-        self.fps_label = QLabel("GIF 帧率 (FPS):")
-        layout.addWidget(self.fps_label)
+
+        self.fps_label = QLabel("GIF 帧率 (FPS)")
         self.fps_input = QLineEdit("15")  # 默认 15 FPS
-        layout.addWidget(self.fps_input)
 
-        self.rename_label = QLabel("文件重命名策略:")
-        layout.addWidget(self.rename_label)
-        self.rename_combo = QComboBox()
-        self.rename_combo.addItems(["覆盖", "自动编号"])
-        layout.addWidget(self.rename_combo)
+        self.full_gif_name_label = QLabel("完整 GIF 文件名称")
+        self.full_gif_name_input = QLineEdit("output.gif")
 
-        self.method_label = QLabel("选择转换方式:")
-        layout.addWidget(self.method_label)
-        self.method_combo = QComboBox()
-        self.method_combo.addItems([ "FFmpeg"])
-        layout.addWidget(self.method_combo)
+        self.filename_label = QLabel("GIF 文件名前缀")
+        self.filename_input = QLineEdit("split_gif")
 
-        self.method_label = QLabel("是否启用临时预览")
-        layout.addWidget(self.method_label)
-        self.method_combo = QComboBox()
-        self.method_combo.addItems(["Yes","No"])
-        layout.addWidget(self.method_combo)
+        target_width_layout.addWidget(self.width_label)
+        target_width_layout.addWidget(self.width_input)
 
+        split_parts_layout.addWidget(self.split_label)
+        split_parts_layout.addWidget(self.split_input)
+
+        max_size_mb_layout.addWidget(self.max_size_label)
+        max_size_mb_layout.addWidget(self.max_size_input)
+
+        hex_value_layout.addWidget(self.hex_label)
+        hex_value_layout.addWidget(self.hex_input)
+
+        fps_layout.addWidget(self.fps_label)
+        fps_layout.addWidget(self.fps_input)
+
+        full_gif_name_layout.addWidget(self.full_gif_name_label)
+        full_gif_name_layout.addWidget(self.full_gif_name_input)
+
+        filename_prefix_layout.addWidget(self.filename_label)
+        filename_prefix_layout.addWidget(self.filename_input)
+
+        args_layout.addWidget(args_title)
+        args_layout.addLayout(target_width_layout)
+        args_layout.addLayout(split_parts_layout)
+        args_layout.addLayout(max_size_mb_layout)
+        args_layout.addLayout(hex_value_layout)
+        args_layout.addLayout(fps_layout)
+        args_layout.addLayout(full_gif_name_layout)
+        args_layout.addLayout(filename_prefix_layout)
+
+        layout.addLayout(args_layout)
+
+        self.input_path.textChanged.connect(self.validate_inputs)
+        self.output_path.textChanged.connect(self.validate_inputs)
+        self.width_input.textChanged.connect(self.validate_inputs)
+        self.split_input.textChanged.connect(self.validate_inputs)
+        self.max_size_input.textChanged.connect(self.validate_inputs)
+        self.filename_input.textChanged.connect(self.validate_inputs)
+        self.hex_input.textChanged.connect(self.validate_inputs)
+        self.fps_input.textChanged.connect(self.validate_inputs)
+
+        # 开始转换
         self.start_button = QPushButton("开始转换")
-        layout.addWidget(self.start_button)
         self.start_button.clicked.connect(self.start_conversion)
+        self.start_button.setProperty("class", "start")
+        self.start_button.setEnabled(False)
 
-        self.progress_bar = QProgressBar()
-        layout.addWidget(self.progress_bar)
-        
-        self.fixed_text = QLineEdit("无名代码v_trim=_=>{return _},$J('#title').val(' '+Array.from(Array(126),_=>'').join(''));")
-        self.fixed_text.setReadOnly(True)  # 设为只读
-        self.fixed_text.setAlignment(Qt.AlignCenter)  # 居中
-        layout.addWidget(self.fixed_text)
-        
-        self.fixed_text = QLineEdit("艺术作品代码$J('#image_width').val(1000).attr('id',''),$J('#image_height').val(1).attr('id','');")
-        self.fixed_text.setReadOnly(True)  # 设为只读
-        self.fixed_text.setAlignment(Qt.AlignCenter)  # 居中
-        layout.addWidget(self.fixed_text)
-        
-        self.fixed_text = QLineEdit("工坊$J('[name=consumer_app_id]').val(480);$J('[name=file_type]').val(0);$J('[name=visibility]').val(0);")
-        self.fixed_text.setReadOnly(True)  # 设为只读
-        self.fixed_text.setAlignment(Qt.AlignCenter)  # 居中
-        layout.addWidget(self.fixed_text)
+        layout.addWidget(self.start_button)
+
+        # 常用代码
+        common_code_layout = QVBoxLayout()
+
+        common_code_title = QLabel("常用代码")
+        common_code_title.setProperty("class", "title")
+
+        # 无名代码
+        noname_layout = QHBoxLayout()
+        self.noname_label = QLabel("无名代码")
+        self.noname_text = QLineEdit(
+            "v_trim=_=>{return _},$J('#title').val(' '+Array.from(Array(126),_=>'').join(''));"
+        )
+        self.noname_text.setReadOnly(True)
+        self.noname_copy = QPushButton("复制")
+        self.noname_copy.clicked.connect(
+            lambda: self.copy_to_clipboard(self.noname_text.text())
+        )
+
+        # 艺术作品代码
+        artwork_layout = QHBoxLayout()
+        self.artwork_label = QLabel("艺术作品代码")
+        self.artwork_text = QLineEdit(
+            "$J('#image_width').val(1000).attr('id',''),$J('#image_height').val(1).attr('id','');"
+        )
+        self.artwork_text.setReadOnly(True)
+        self.artwork_copy = QPushButton("复制")
+        self.artwork_copy.clicked.connect(
+            lambda: self.copy_to_clipboard(self.artwork_text.text())
+        )
+
+        # 创意工坊代码
+        workshop_layout = QHBoxLayout()
+        self.workshop_label = QLabel("创意工坊代码")
+        self.workshop_text = QLineEdit(
+            "$J('[name=consumer_app_id]').val(480);$J('[name=file_type]').val(0);$J('[name=visibility]').val(0);"
+        )
+        self.workshop_text.setReadOnly(True)
+        self.workshop_copy = QPushButton("复制")
+        self.workshop_copy.clicked.connect(
+            lambda: self.copy_to_clipboard(self.workshop_text.text())
+        )
+
+        noname_layout.addWidget(self.noname_label)
+        noname_layout.addWidget(self.noname_text)
+        noname_layout.addWidget(self.noname_copy)
+
+        artwork_layout.addWidget(self.artwork_label)
+        artwork_layout.addWidget(self.artwork_text)
+        artwork_layout.addWidget(self.artwork_copy)
+
+        workshop_layout.addWidget(self.workshop_label)
+        workshop_layout.addWidget(self.workshop_text)
+        workshop_layout.addWidget(self.workshop_copy)
+
+        common_code_layout.addWidget(common_code_title)
+        common_code_layout.addLayout(noname_layout)
+        common_code_layout.addLayout(artwork_layout)
+        common_code_layout.addLayout(workshop_layout)
+
+        layout.addLayout(common_code_layout)
 
         self.setLayout(layout)
         self.show()
 
     def load_video(self):
-        file_path, _ = QFileDialog.getOpenFileName(self,"选择视频文件", "", "视频文件 (*.mp4 *.avi *.mov)")
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "选择视频文件", "", "视频文件 (*.mp4 *.avi *.mov)"
+        )
         if file_path:
-            self.video_path.setText(file_path)
+            self.input_path.setText(file_path)
 
     def load_output_dir(self):
-        dir_path = QFileDialog.getExistingDirectory(self,"选择输出目录")
+        dir_path = QFileDialog.getExistingDirectory(self, "选择输出目录")
         if dir_path:
             self.output_path.setText(dir_path)
 
     def start_conversion(self):
+        self.start_button.setEnabled(False)
+        self.start_button.setText("准备开始转换")
+
         try:
             target_width = int(self.width_input.text())
             split_parts = int(self.split_input.text())
             max_size_mb = float(self.max_size_input.text())
             filename_prefix = self.filename_input.text()
-            full_gif_name = self.full_gif_name_input.text()
-            rename_strategy = self.rename_combo.currentText()
-            method = self.method_combo.currentText()
-            hex_value = int(self.hex_input.text().strip(), 16) if self.hex_input.text().strip() else 21
+            hex_value = (
+                int(self.hex_input.text().strip(), 16)
+                if self.hex_input.text().strip()
+                else 21
+            )
             fps = int(self.fps_input.text())
+            full_gif_name = self.full_gif_name_input.text()
         except ValueError:
             QMessageBox.warning(self, "警告", "请输入正确的数值")
             return
 
         self.processor = VideoProcessor(
-            self.video_path.text(), self.output_path.text(), target_width, split_parts, max_size_mb,
-            filename_prefix, rename_strategy, method, hex_value, fps, full_gif_name
+            self.input_path.text(),
+            self.output_path.text(),
+            target_width,
+            split_parts,
+            max_size_mb,
+            filename_prefix,
+            hex_value,
+            fps,
+            full_gif_name,
         )
-        self.processor.progress.connect(self.progress_bar.setValue)
-        self.processor.completed.connect(lambda path: QMessageBox.information(self, "完成", f"GIF 生成成功: {path}"))
-        self.processor.error.connect(lambda err: QMessageBox.critical(self, "错误", err))
+
+        self.processor.progress.connect(self.update_progress)
+        self.processor.completed.connect(self.conversion_completed)
+        self.processor.error.connect(self.conversion_error)
+
         self.processor.start()
+
+    def validate_inputs(self):
+        """验证所有输入是否有效"""
+        try:
+            # 检查必填字段
+            if not self.input_path.text() or not self.output_path.text():
+                self.start_button.setEnabled(False)
+                return
+
+            # 验证数值输入
+            int(self.width_input.text())
+            int(self.split_input.text())
+            float(self.max_size_input.text())
+            if self.hex_input.text():
+                int(self.hex_input.text(), 16)
+            int(self.fps_input.text())
+
+            self.start_button.setEnabled(True)
+
+        except ValueError:
+            self.start_button.setEnabled(False)
+
+    def update_progress(self, text):
+        """更新进度显示"""
+        self.start_button.setText(text)
+
+    def conversion_completed(self, output_path):
+        """转换完成后的处理"""
+        self.start_button.setEnabled(True)
+        self.start_button.setText("开始转换")
+        QMessageBox.information(self, "成功", f"转换完成!\n输出目录: {output_path}")
+
+    def conversion_error(self, error_msg):
+        """转换错误处理"""
+        self.start_button.setEnabled(True)
+        self.start_button.setText("开始转换")
+        QMessageBox.critical(self, "错误", f"转换失败: {error_msg}")
+
+    def copy_to_clipboard(self, text):
+        QApplication.clipboard().setText(text)
+        QMessageBox.information(self, "提示", "已复制到剪贴板")
