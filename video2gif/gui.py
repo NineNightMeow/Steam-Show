@@ -8,7 +8,10 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QLineEdit,
     QMessageBox,
+    QFrame,
 )
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPalette
 from video2gif.processor import VideoProcessor
 
 
@@ -17,42 +20,61 @@ class Video2GifApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Steam 展框制作工具")
-        self.setGeometry(300, 300, 600, 800)
-        self.setStyleSheet(
-            """
-            QWidget {
-                background-color: #f5f5f5;
-                font-family: "Microsoft YaHei", sans-serif;
-            }
-            
+
+        # 设置窗口大小
+        self.setFixedSize(600, 800)
+
+        # 移动到屏幕中心
+        screen = QApplication.primaryScreen().geometry()
+        window_rect = self.frameGeometry()
+        center_point = screen.center()
+        window_rect.moveCenter(center_point)
+        self.move(window_rect.topLeft())
+
+        # 跟随系统主题
+        self.setAttribute(Qt.WA_StyleSheet)
+
+        # 主题样式
+        self.base_style = """
             QLabel {
-                color: #333333;
                 font-size: 14px;
             }
             
             QLabel[class="title"] {
-                color: #364c63;
                 font-size: 18px;
                 font-weight: bold;
             }
             
-            QLineEdit {
-                padding: 8px;
-                border: 1px solid #bdc3c7;
+            QPushButton {
+                padding: 8px 15px;
+                border: none;
                 border-radius: 4px;
-                background-color: #f0f0f0;
+            }
+
+            QPushButton[class="start"] {
+                padding: 15px;
             }
             
-            QComboBox {
+            QLineEdit {
                 padding: 8px;
-                border: 1px solid #bdc3c7;
                 border-radius: 4px;
-                background-color: #f0f0f0;
+            }
+        """
+
+        # 浅色主题
+        self.light_style = (
+            self.base_style
+            + """
+            QWidget {
+                color: #333333;
+                background-color: #f5f5f5;
+            }
+            
+            QLabel[class="title"] {
+                color: #364c63;
             }
             
             QPushButton {
-                padding: 8px 15px;
-                border-radius: 4px;
                 color: white;
                 background-color: #364c63;
             }
@@ -65,12 +87,58 @@ class Video2GifApp(QWidget):
                 color: rgba(255, 255, 255, 0.5);
                 background-color: rgba(54, 76, 99, 0.5);
             }
+            
+            QLineEdit {
+                border: 1px solid #bdc3c7;
+                background-color: white;
+            }
 
-            QPushButton[class="start"] {
-                padding: 15px;
+            QFrame[class="separator"] {
+                border-top: 1px solid #bdc3c7;
             }
         """
         )
+
+        # 深色主题
+        self.dark_style = (
+            self.base_style
+            + """
+            QWidget {
+                color: #ffffff;
+                background-color: #2d2d2d;
+            }
+            
+            QPushButton {
+                background-color: #3d3d3d;
+            }
+
+            QPushButton:hover {
+                background-color: #4d4d4d;
+            }
+
+            QPushButton:disabled {
+                color: rgba(255, 255, 255, 0.5);
+                background-color: rgba(61, 61, 61, 0.5);
+            }
+            
+            QLineEdit {
+                border: 1px solid #555555;
+                background-color: #3d3d3d;
+                color: white;
+            }
+
+            QFrame[class="separator"] {
+                border-top: 1px solid #555555;
+            }
+        """
+        )
+
+        # 监听系统主题变化
+        app = QApplication.instance()
+        app.paletteChanged.connect(self.update_theme)
+
+        # 初始化主题
+        self.update_theme()
 
         layout = QVBoxLayout(self)
 
@@ -88,6 +156,7 @@ class Video2GifApp(QWidget):
         # 视频文件选择
         self.input_label = QLabel("视频文件")
         self.input_path = QLineEdit()
+        self.input_path.setPlaceholderText("视频文件路径")
         self.input_button = QPushButton("浏览")
         self.input_button.clicked.connect(self.load_video)
 
@@ -100,6 +169,7 @@ class Video2GifApp(QWidget):
         # 输出目录选择
         self.output_label = QLabel("输出目录")
         self.output_path = QLineEdit()
+        self.output_path.setPlaceholderText("输出目录路径")
         self.output_button = QPushButton("浏览")
         self.output_button.clicked.connect(self.load_output_dir)
 
@@ -112,8 +182,6 @@ class Video2GifApp(QWidget):
         file_select_layout.addWidget(file_select_title)
         file_select_layout.addLayout(input_layout)
         file_select_layout.addLayout(output_layout)
-
-        layout.addLayout(file_select_layout)
 
         # 参数设置
         args_layout = QVBoxLayout()
@@ -129,26 +197,36 @@ class Video2GifApp(QWidget):
         filename_prefix_layout = QHBoxLayout()
         full_gif_name_layout = QHBoxLayout()
 
-        self.width_label = QLabel("目标宽度 (px)")
+        # input 宽度
+        input_width = 200
+
+        self.width_label = QLabel("目标宽度")
         self.width_input = QLineEdit("630")
+        self.width_input.setPlaceholderText("单位：px")
 
-        self.split_label = QLabel("GIF 分割份数")
+        self.split_label = QLabel("分割份数")
         self.split_input = QLineEdit("5")
+        self.split_input.setPlaceholderText("5")
 
-        self.max_size_label = QLabel("最大单个 GIF 大小 (MB)")
+        self.max_size_label = QLabel("单个文件最大大小")
         self.max_size_input = QLineEdit("5")
+        self.max_size_input.setPlaceholderText("单位：MB")
 
-        self.hex_label = QLabel("修改 GIF 末位 16 进制数 (0-255) (默认21即可)")
+        self.hex_label = QLabel("末位 HEX 值")
         self.hex_input = QLineEdit("21")
+        self.hex_input.setPlaceholderText("0~255")
 
-        self.fps_label = QLabel("GIF 帧率 (FPS)")
-        self.fps_input = QLineEdit("15")  # 默认 15 FPS
+        self.fps_label = QLabel("帧率")
+        self.fps_input = QLineEdit("15")
+        self.fps_input.setPlaceholderText("15")
 
-        self.full_gif_name_label = QLabel("完整 GIF 文件名称")
+        self.full_gif_name_label = QLabel("单文件名称")
         self.full_gif_name_input = QLineEdit("output.gif")
+        self.full_gif_name_input.setPlaceholderText("output.gif")
 
-        self.filename_label = QLabel("GIF 文件名前缀")
+        self.filename_label = QLabel("分文件前缀")
         self.filename_input = QLineEdit("split_gif")
+        self.filename_input.setPlaceholderText("split_gif")
 
         target_width_layout.addWidget(self.width_label)
         target_width_layout.addWidget(self.width_input)
@@ -171,16 +249,13 @@ class Video2GifApp(QWidget):
         filename_prefix_layout.addWidget(self.filename_label)
         filename_prefix_layout.addWidget(self.filename_input)
 
-        args_layout.addWidget(args_title)
-        args_layout.addLayout(target_width_layout)
-        args_layout.addLayout(split_parts_layout)
-        args_layout.addLayout(max_size_mb_layout)
-        args_layout.addLayout(hex_value_layout)
-        args_layout.addLayout(fps_layout)
-        args_layout.addLayout(full_gif_name_layout)
-        args_layout.addLayout(filename_prefix_layout)
-
-        layout.addLayout(args_layout)
+        self.width_input.setFixedWidth(input_width)
+        self.split_input.setFixedWidth(input_width)
+        self.max_size_input.setFixedWidth(input_width)
+        self.hex_input.setFixedWidth(input_width)
+        self.fps_input.setFixedWidth(input_width)
+        self.filename_input.setFixedWidth(input_width)
+        self.full_gif_name_input.setFixedWidth(input_width)
 
         self.input_path.textChanged.connect(self.validate_inputs)
         self.output_path.textChanged.connect(self.validate_inputs)
@@ -191,19 +266,29 @@ class Video2GifApp(QWidget):
         self.hex_input.textChanged.connect(self.validate_inputs)
         self.fps_input.textChanged.connect(self.validate_inputs)
 
+        args_layout.addWidget(args_title)
+        args_layout.addLayout(target_width_layout)
+        args_layout.addLayout(split_parts_layout)
+        args_layout.addLayout(max_size_mb_layout)
+        args_layout.addLayout(hex_value_layout)
+        args_layout.addLayout(fps_layout)
+        args_layout.addLayout(full_gif_name_layout)
+        args_layout.addLayout(filename_prefix_layout)
+
         # 开始转换
         self.start_button = QPushButton("开始转换")
         self.start_button.clicked.connect(self.start_conversion)
         self.start_button.setProperty("class", "start")
         self.start_button.setEnabled(False)
 
-        layout.addWidget(self.start_button)
-
         # 常用代码
         common_code_layout = QVBoxLayout()
 
         common_code_title = QLabel("常用代码")
         common_code_title.setProperty("class", "title")
+
+        # label 宽度
+        label_width = 100
 
         # 无名代码
         noname_layout = QHBoxLayout()
@@ -241,6 +326,10 @@ class Video2GifApp(QWidget):
             lambda: self.copy_to_clipboard(self.workshop_text.text())
         )
 
+        self.noname_label.setFixedWidth(label_width)
+        self.artwork_label.setFixedWidth(label_width)
+        self.workshop_label.setFixedWidth(label_width)
+
         noname_layout.addWidget(self.noname_label)
         noname_layout.addWidget(self.noname_text)
         noname_layout.addWidget(self.noname_copy)
@@ -258,10 +347,37 @@ class Video2GifApp(QWidget):
         common_code_layout.addLayout(artwork_layout)
         common_code_layout.addLayout(workshop_layout)
 
+        # 布局
+        def create_separator():
+            """创建分割线"""
+            separator = QFrame()
+            separator.setFrameShape(QFrame.HLine)
+            separator.setFrameShadow(QFrame.Sunken)
+            separator.setProperty("class", "separator")
+            return separator
+
+        layout.addLayout(file_select_layout)
+        layout.addLayout(args_layout)
+        layout.addWidget(self.start_button)
+        layout.addWidget(create_separator())
         layout.addLayout(common_code_layout)
 
         self.setLayout(layout)
         self.show()
+
+        self.is_converting = False
+
+    def update_theme(self):
+        """更新主题样式"""
+        app = QApplication.instance()
+        palette = app.palette()
+        window_color = palette.color(QPalette.Window)
+
+        # 根据系统主题设置样式
+        if window_color.lightness() > 128:
+            self.setStyleSheet(self.light_style)
+        else:
+            self.setStyleSheet(self.dark_style)
 
     def load_video(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -276,6 +392,7 @@ class Video2GifApp(QWidget):
             self.output_path.setText(dir_path)
 
     def start_conversion(self):
+        self.is_converting = True
         self.start_button.setEnabled(False)
         self.start_button.setText("准备开始转换")
 
@@ -315,6 +432,9 @@ class Video2GifApp(QWidget):
 
     def validate_inputs(self):
         """验证所有输入是否有效"""
+        if self.is_converting:
+            return
+
         try:
             # 检查必填字段
             if not self.input_path.text() or not self.output_path.text():
@@ -340,6 +460,7 @@ class Video2GifApp(QWidget):
 
     def conversion_completed(self, output_path):
         """转换完成后的处理"""
+        self.is_converting = False
         self.start_button.setEnabled(True)
         self.start_button.setText("开始转换")
         QMessageBox.information(self, "成功", f"转换完成!\n输出目录: {output_path}")
@@ -353,3 +474,18 @@ class Video2GifApp(QWidget):
     def copy_to_clipboard(self, text):
         QApplication.clipboard().setText(text)
         QMessageBox.information(self, "提示", "已复制到剪贴板")
+
+    def closeEvent(self, event):
+        """关闭事件"""
+        if self.is_converting:
+            reply = QMessageBox.question(
+                self,
+                "确认退出",
+                "正在转换中，确定要退出吗？",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            if reply == QMessageBox.No:
+                event.ignore()
+                return
+        event.accept()
