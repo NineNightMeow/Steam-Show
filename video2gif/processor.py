@@ -44,16 +44,26 @@ class VideoProcessor(QThread):
     # 作案变量
     @staticmethod
     def add_ffmpeg_to_path():
+        """获取 ffmpeg 可执行文件路径"""
         if getattr(sys, "frozen", False):
-            base_dir = os.path.join(sys._MEIPASS, "ffmpeg")  # PyInstaller 运行时路径
+            # PyInstaller 打包后路径
+            ffmpeg_path = os.path.join(
+                os.path.dirname(sys.executable), "video2gif", "ffmpeg", "ffmpeg.exe"
+            )
+            if not os.path.exists(ffmpeg_path):
+                # 尝试临时目录
+                ffmpeg_path = os.path.join(
+                    sys._MEIPASS, "video2gif", "ffmpeg", "ffmpeg.exe"
+                )
         else:
-            base_dir = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "ffmpeg")
+            # 开发环境路径
+            ffmpeg_path = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "ffmpeg", "ffmpeg.exe")
             )
 
-        ffmpeg_path = os.path.join(base_dir, "ffmpeg.exe")
         if not os.path.exists(ffmpeg_path):
             raise FileNotFoundError(f"未找到ffmpeg: {ffmpeg_path}")
+
         return ffmpeg_path
 
     def run(self):
@@ -65,14 +75,14 @@ class VideoProcessor(QThread):
             self.convert_with_ffmpeg(gif_path)
 
             self.split_gif(gif_path)
-            self.completed.emit(gif_path)
+            self.completed.emit(self.output_dir)
         except Exception as e:
             self.error.emit(str(e))
 
     def convert_with_ffmpeg(self, output_path):
         # 使用 FFmpeg 进行 GIF 转换
         if os.path.exists(output_path):
-            os.remove(output_path)  # 先删除重复文件（这里注意下）确保 ffmpeg可以写入
+            os.remove(output_path)
         ffmpeg_cmd = [
             self.ffmpeg_path,
             "-y",
@@ -87,7 +97,7 @@ class VideoProcessor(QThread):
         subprocess.run(ffmpeg_cmd, check=True)
 
     def split_gif(self, input_gif):
-        # 分割 GIF 并确保帧率一致？
+        # 分割 GIF 并确保帧率一致
         gif = Image.open(input_gif)
         width, height = gif.size
         part_width = width // self.split_parts
