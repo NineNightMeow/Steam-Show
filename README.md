@@ -1,27 +1,37 @@
-# 简介
+# Introduction
 
-一个基于 PySide6 + OpenCV 的 GUI 工具，用于制作 Steam 展柜使用的 GIF 文件
+Developed by PyQt5 + OpenCV, used to create and deploy Steam personal profile showcases
 
-<img src="images/srceenshot.png" alt="软件截图">
+<img src="docs/screenshot.png" alt="screenshot">
 
-### 功能特点
+### Features
 
--   视频转 GIF（MP4、AVI、MOV 等格式）
--   可选 GIF 切割（等宽分割为 N 份）
--   可修改 GIF 文件最后字节
--   简洁的 GUI 操作
--   支持 Windows/Linux/macOS
+-   Video(MP4, AVI, MOV, etc.) to GIF converter
+-   Built-in deployment function, making it easy to deploy to Steam personal profile showcases
 
-### 开发
+### Development
 
-确保你的 Python 版本 >= 3.8
+Ensure your Python version is >= 3.8
 
-#### 安装依赖
+#### Install dependencies
 
 ```
 pip install -r requirements.txt
 ```
 
-### 法律声明
+#### Packing
 
-本软件采用 CC BY-NC 4.0 许可证，软件著作者享有版权，仅供个人学习使用，禁止本体与衍生品用于任何商业用途
+This application uses Nuitka to pack the executable file
+
+```
+python -m nuitka --standalone --onefile --remove-output --windows-console-mode="disable" --enable-plugins="pyqt5" --output-filename="Steam-Show" --output-dir="dist" --main="main.py" --windows-icon-from-ico="src/icons/favicon.ico" 
+```
+
+Usage of **PyQt-Fluent-Widgets** [Docs](https://qfluentwidgets.com/pages/about)
+
+> [!WARNING]
+> Please do not mix PyQt and PySide, otherwise the program may crash [see](https://qfluentwidgets.com/pages/install)
+
+### License
+
+This software is licensed under the CC BY-NC 4.0 license. The software author and copyright holder reserves all rights, including but not limited to the right to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software.

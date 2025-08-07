@@ -1,5 +1,6 @@
-pyside6
+pyqt5
+pyqt-fluent-widgets
 opencv-python
 numpy
 pillow
-pyinstaller
+nuitka
