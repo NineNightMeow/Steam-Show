@@ -24,13 +24,13 @@ pip install -r requirements.txt
 本软件使用 Nuitka 进行打包
 
 ```
-python -m nuitka --standalone --onefile --remove-output --windows-console-mode="disable" --enable-plugins="pyqt5" --output-filename="Steam-Show" --output-dir="dist" --main="main.py" --windows-icon-from-ico="src/icons/favicon.ico" 
+python -m nuitka --standalone --onefile --remove-output --windows-console-mode="disable" --enable-plugins="pyqt5" --output-filename="Steam-Show" --output-dir="dist" --main="main.py" --windows-icon-from-ico="src/icons/favicon.ico"
 ```
 
-**PyQt-Fluent-Widgets** 的使用方法请参考 [官方文档](https://qfluentwidgets.com/zh/pages/about)
+_PyQt-Fluent-Widgets_ 的使用方法请参考 **[官方文档](https://qfluentwidgets.com/zh/pages/about)**
 
 > [!WARNING]
-> 请不要混用 PyQt 与 PySide，否则可能会导致程序闪退 [详见](https://qfluentwidgets.com/zh/pages/install)
+> 请不要混用 PyQt 与 PySide，否则可能会导致程序闪退 **[详见](https://qfluentwidgets.com/zh/pages/install)**
 
 ### 法律声明
 

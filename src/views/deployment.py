@@ -1,18 +1,13 @@
 from PyQt5.QtCore import Qt, QUrl
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLineEdit
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
 from qfluentwidgets import (
     PushButton,
     PrimaryPushButton,
     DropDownPushButton,
-    LineEdit,
     RoundMenu,
     Action,
-    GroupHeaderCardWidget,
     InfoBar,
     InfoBarPosition,
-    TeachingTip,
-    TeachingTipTailPosition,
-    InfoBarIcon,
     FluentIcon,
 )
 
@@ -111,16 +106,12 @@ class Deployment(Interface):
 
     def onLoaded(self):
         self.browser.urlChanged.connect(self.onUrlChanged)
-        self.browser.page().runJavaScript(
+        self.browser.run(
             'document.querySelector("#global_header").style.display = "none";'
         )
-        self.browser.page().runJavaScript(
-            'document.querySelector("#footer").style.display = "none";'
-        )
+        self.browser.run('document.querySelector("#footer").style.display = "none";')
         print("Successfully removed header and footer")
-        self.browser.page().runJavaScript(
-            'document.querySelector("#agree_terms").checked = true;'
-        )
+        self.browser.run('document.querySelector("#agree_terms").checked = true;')
         print("Automatically checked agreement radio")
 
     def onUrlChanged(self, url):
@@ -151,11 +142,12 @@ class Deployment(Interface):
         self.browser.reload()
 
     def onUpload(self):
-        self.browser.page().runJavaScript("document.querySelector('#file').click();")
+        self.browser.run("document.querySelector('#file').click();")
 
     def send_script(self, script):
-        self.browser.page().runJavaScript(script)
-        print(f"Sending script:\n{script}")
+        print("Sent script to webview")
+        self.browser.run(script)
+
         InfoBar.success(
             title=self.tr("Successfully executed"),
             content=self.tr("Script sent"),

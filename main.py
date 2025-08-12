@@ -8,7 +8,7 @@ from qfluentwidgets import (
     SplashScreen,
     FluentWindow,
     NavigationItemPosition,
-    Dialog,
+    MessageBox,
     FluentIcon,
     FluentTranslator,
     Theme,
@@ -33,6 +33,9 @@ class MainWindow(FluentWindow):
             QIcon(os.path.join("src", "icons", "splash_icon.png")), self
         )
         self.splashScreen.setIconSize(QSize(102, 102))
+
+        self.setMicaEffectEnabled(False)
+
         self.show()
 
         self.createSubInterface()
@@ -108,11 +111,14 @@ class MainWindow(FluentWindow):
 
     def closeEvent(self, event):
         if self.task_stack:
-            confirm = Dialog(
+            confirm = MessageBox(
                 self.tr("Confirm to quit"),
                 self.tr("There are still unfinished tasks. Are you sure to quit?"),
                 self,
             )
+            confirm.yesButton.setText(self.tr("Quit"))
+            confirm.cancelButton.setText(self.tr("Cancel"))
+
             if confirm.exec():
                 event.accept()
                 self.themeListener.terminate()
@@ -130,7 +136,5 @@ if __name__ == "__main__":
     app.installTranslator(FluentTranslator())
 
     window = MainWindow()
-    window.setMicaEffectEnabled(False)
-    window.show()
 
     sys.exit(app.exec())

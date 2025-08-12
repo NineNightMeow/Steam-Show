@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QLineEdit, QVBoxLayout, QFileDialog
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt
 from qfluentwidgets import (
     SegmentedWidget,
     PrimaryPushButton,
@@ -59,10 +59,6 @@ class Convert(Interface):
         self.view.setLayout(layout)
 
         self.is_converting = False
-
-        self.stateTooltip = StateToolTip("", "", self.window())
-        self.stateTooltip.move(self.stateTooltip.getSuitablePos())
-        self.stateTooltip.hide()
 
     class FileSelectCard(GroupHeaderCardWidget):
         def __init__(self, parent=None):
@@ -195,15 +191,16 @@ class Convert(Interface):
             self.start_button.setEnabled(False)
 
     def start_conversion(self):
+        """开始转换"""
         self.is_converting = True
         self.start_button.setEnabled(False)
         main_window = self.window()
         if hasattr(main_window, "task_stack"):
             main_window.task_stack.append("convert_task")
 
-        self.stateTooltip.setTitle(self.tr("Converting"))
-        self.stateTooltip.setContent(self.tr("Wait for start"))
-        self.stateTooltip.setState(False)
+        self.stateTooltip = StateToolTip("Converting", "Wait for start", self.window())
+        self.stateTooltip.move(self.stateTooltip.getSuitablePos())
+        self.stateTooltip.closeButton.hide()
         self.stateTooltip.show()
 
         try:
@@ -243,7 +240,8 @@ class Convert(Interface):
 
     def update_progress(self, text):
         """更新进度显示"""
-        self.stateTooltip.setContent(text)
+        if self.stateTooltip:
+            self.stateTooltip.setContent(text)
 
     def conversion_completed(self, output_path):
         """转换完成后的处理"""
@@ -254,17 +252,17 @@ class Convert(Interface):
             if "convert_task" in main_window.task_stack:
                 main_window.task_stack.remove("convert_task")
 
-        self.stateTooltip.setTitle(self.tr("Conversion completed"))
-        self.stateTooltip.setContent(f"{self.tr('Output path')}: {output_path}")
-        self.stateTooltip.setState(True)
-
-        QTimer.singleShot(2000, self.stateTooltip.hide)
+        if self.stateTooltip:
+            self.stateTooltip.setTitle(self.tr("Conversion completed"))
+            self.stateTooltip.setContent(f"{self.tr('Output path')}: {output_path}")
+            self.stateTooltip.setState(True)
 
     def conversion_error(self, error_msg):
         """转换错误处理"""
         self.is_converting = False
         self.start_button.setEnabled(True)
-        self.stateTooltip.hide()
+        if self.stateTooltip:
+            self.stateTooltip.hide()
         main_window = self.window()
         if hasattr(main_window, "task_stack"):
             if "convert_task" in main_window.task_stack:
@@ -273,7 +271,7 @@ class Convert(Interface):
         InfoBar.warning(
             title=self.tr("Conversion failed"),
             content=error_msg,
-            orient=Qt.Horizontal,
+            orient=Qt.Vertical,
             isClosable=True,
             position=InfoBarPosition.TOP,
             duration=2000,
