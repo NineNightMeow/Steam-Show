@@ -1,4 +1,3 @@
-from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
 from qfluentwidgets import (
     PushButton,
@@ -6,20 +5,20 @@ from qfluentwidgets import (
     DropDownPushButton,
     RoundMenu,
     Action,
-    InfoBar,
-    InfoBarPosition,
     FluentIcon,
 )
 
-from src.views.interface import Interface, Separator
+from src.views.interface import Interface, InfoTip, Separator
 from src.utils.translator import Translator
 from src.utils.webview import Webview
 
 
 class Deployment(Interface):
-    def __init__(self):
+    def __init__(self, window):
         super().__init__(title=Translator().deployment_title)
         self.setObjectName("deployment")
+
+        self.window = window
 
         layout = QVBoxLayout(self)
 
@@ -92,71 +91,58 @@ class Deployment(Interface):
         self.tool_bar.addWidget(self.submit_button)
 
         # Webview
-        self.browser = Webview(self)
-        self.browser.loadFinished.connect(self.onLoaded)
-        self.browser.setContextMenuPolicy(Qt.NoContextMenu)
+        self.webview = Webview(self.view)
+        self.webview.loadFinished.connect(self.onLoaded)
 
         self.defaultUrl = "https://steamcommunity.com/sharedfiles/edititem/767/3/"
-        self.browser.load(QUrl(self.defaultUrl))
+        self.webview.open(self.defaultUrl)
 
         layout.addLayout(self.tool_bar)
-        layout.addWidget(self.browser, 1)
+        layout.addWidget(self.webview, 1)
 
         self.view.setLayout(layout)
 
     def onLoaded(self):
-        self.browser.urlChanged.connect(self.onUrlChanged)
-        self.browser.run(
+        self.webview.urlChanged.connect(self.onUrlChanged)
+        self.webview.run(
             'document.querySelector("#global_header").style.display = "none";'
         )
-        self.browser.run('document.querySelector("#footer").style.display = "none";')
-        print("Successfully removed header and footer")
-        self.browser.run('document.querySelector("#agree_terms").checked = true;')
-        print("Automatically checked agreement radio")
+        self.webview.run('document.querySelector("#footer").style.display = "none";')
+        self.webview.run('document.querySelector("#agree_terms").checked = true;')
 
     def onUrlChanged(self, url):
         if url != self.defaultUrl:
             if "https://steamcommunity.com/login" in url:
-                InfoBar(
+                InfoTip(
+                    type="error",
                     title=self.tr("Please login first"),
-                    content="",
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=2000,
-                    parent=self.window(),
+                    parent=self.window,
                 )
             else:
-                InfoBar.success(
+                InfoTip(
+                    type="success",
                     title=self.tr("Successfully uploaded"),
-                    content=self.tr("Reloading"),
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=2000,
-                    parent=self.window(),
+                    message=self.tr("Reloading"),
+                    parent=self.window,
                 )
-            self.browser.load(QUrl(self.defaultUrl))
+            self.webview.open(self.defaultUrl)
 
     def onReload(self):
-        self.browser.reload()
+        self.webview.reload()
 
     def onUpload(self):
-        self.browser.run("document.querySelector('#file').click();")
+        self.webview.run("document.querySelector('#file').click();")
 
     def send_script(self, script):
         print("Sent script to webview")
-        self.browser.run(script)
+        self.webview.run(script, console=True)
 
-        InfoBar.success(
+        InfoTip(
+            type="success",
             title=self.tr("Successfully executed"),
-            content=self.tr("Script sent"),
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            duration=2000,
-            parent=self.window(),
+            message=self.tr("Script sent"),
+            parent=self.window,
         )
 
     def onSubmit(self):
-        self.browser.page().runJavaScript("SubmitItem();")
+        self.webview.run("SubmitItem();")

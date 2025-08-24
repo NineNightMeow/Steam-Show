@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #131518;
+            font-family: Arial, sans-serif;
+        }
+
+        #previewer {
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            color: #757575;
+            font-size: 13px;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #5aa9d6;
+        }
+
+        h1 {
+            font-size: 20px;
+        }
+
+        h2 {
+            font-size: 18px;
+        }
+
+        h3 {
+            font-size: 16px;
+        }
+
+        strong {
+            font-weight: bolder;
+        }
+
+        a {
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        spoiler {
+            position: relative;
+            color: #ffffff;
+        }
+
+        spoiler::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+        }
+
+        spoiler:hover::after {
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="previewer"></div>
+    <script>
+        const previewer = document.getElementById('previewer');
+
+        function parseText(text) {
+            const noparseBlocks = [];
+            let blockIndex = 0;
+
+            text = text.replace(/\[noparse\]([\s\S]*?)\[\/noparse\]/g, (match, content) => {
+                noparseBlocks.push(content);
+                return `--NOPARSE${blockIndex++}--`;
+            });
+
+            text = text.replace(/\n/g, '<br>');
+
+            text = text.replace(/\[h1\](.*?)\[\/h1\]/g, '<h1>$1</h1>');
+            text = text.replace(/\[h2\](.*?)\[\/h2\]/g, '<h2>$1</h2>');
+            text = text.replace(/\[h3\](.*?)\[\/h3\]/g, '<h3>$1</h3>');
+            text = text.replace(/\[b\](.*?)\[\/b\]/g, '<strong>$1</strong>');
+            text = text.replace(/\[u\](.*?)\[\/u\]/g, '<u>$1</u>');
+            text = text.replace(/\[i\](.*?)\[\/i\]/g, '<em>$1</em>');
+            text = text.replace(/\[strike\](.*?)\[\/strike\]/g, '<s>$1</s>');
+            text = text.replace(/\[spoiler\](.*?)\[\/spoiler\]/g, '<spoiler>$1</spoiler>');
+            text = text.replace(/\[hr\](.*?)\[\/hr\]/g, '<hr>$1');
+            text = text.replace(/\[url=(.*?)\](.*?)\[\/url\]/g, '<a href="$1" target="_blank">$2</a>');
+
+            text = text.replace(/::([^\s:]*)::/g, '🙂');
+
+            text = text.replace(/--NOPARSE(\d+)--/g, (match, index) => {
+                return noparseBlocks[parseInt(index)] || '';
+            });
+
+            previewer.innerHTML = text || "";
+        }
+
+        function syncScroll(ratio) {
+            const maxScroll = Math.max(0, document.documentElement.scrollHeight - document.documentElement.clientHeight);
+            const targetScroll = ratio * maxScroll;
+            window.scrollTo({
+                top: targetScroll,
+                behavior: 'instant'
+            });
+        }
+
+        window.syncScroll = syncScroll;
+    </script>
+</body>
+
+</html>

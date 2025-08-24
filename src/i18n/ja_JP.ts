@@ -24,7 +24,7 @@
     <message>
         <location filename="src/views/convert.py" line="116"/>
         <source>Arguments</source>
-        <translation>引数</translation>
+        <translation>引数の設定</translation>
     </message>
     <message>
         <location filename="src/views/convert.py" line="161"/>

@@ -24,7 +24,7 @@
     <message>
         <location filename="src/views/convert.py" line="116"/>
         <source>Arguments</source>
-        <translation>参数</translation>
+        <translation>参数设置</translation>
     </message>
     <message>
         <location filename="src/views/convert.py" line="161"/>
