@@ -89,11 +89,11 @@ class Level(Interface):
         self.result_layout.setColumnStretch(0, 1)
         self.result_layout.setColumnStretch(1, 1)
 
-        self.exp_card = Card(Icon.fromName("reward_20"), self.tr("Exp needed"))
-        self.sets_card = Card(Icon.fromName("playing_cards_20"), self.tr("Sets needed"))
-        self.friends_card = Card(Icon.fromName("people_20"), self.tr("Friends Count"))
+        self.exp_card = Card(Icon.fromName("Reward20Regular"), self.tr("Exp needed"))
+        self.sets_card = Card(Icon.fromName("PlayingCards20Regular"), self.tr("Sets needed"))
+        self.friends_card = Card(Icon.fromName("People20Regular"), self.tr("Friends Count"))
         self.showcase_card = Card(
-            Icon.fromName("app_recent_20"), self.tr("Showcase Unlocked")
+            Icon.fromName("AppRecent20Regular"), self.tr("Showcase Unlocked")
         )
 
         self.result_layout.addWidget(self.exp_card, 0, 0)

@@ -9,12 +9,12 @@ from qfluentwidgets import (
     CaptionLabel,
     ElevatedCardWidget,
     FlowLayout,
-    FluentIcon,
     isDarkTheme,
 )
 
 from src.views.interface import Interface
 from src.utils.translator import Translator
+from src.icons.icons import Icon
 
 
 class Card(ElevatedCardWidget):
@@ -71,7 +71,7 @@ class Home(Interface):
 
         self.functions_flow.addWidget(
             Card(
-                FluentIcon.SYNC,
+                Icon.fromName("ArrowSyncCircle20Regular"),
                 t.convert_title,
                 "convert",
                 window,
@@ -79,7 +79,7 @@ class Home(Interface):
         )
         self.functions_flow.addWidget(
             Card(
-                FluentIcon.CLOUD,
+                Icon.fromName("CloudArrowUp20Regular"),
                 t.deployment_title,
                 "deployment",
                 window,
@@ -87,7 +87,7 @@ class Home(Interface):
         )
         self.tools_flow.addWidget(
             Card(
-                FluentIcon.PENCIL_INK,
+                Icon.fromName("EditLineHorizontal320Regular"),
                 t.editor_title,
                 "editor",
                 window,
@@ -95,7 +95,7 @@ class Home(Interface):
         )
         self.tools_flow.addWidget(
             Card(
-                FluentIcon.MESSAGE,
+                Icon.fromName("ChatArrowBackDown20Regular"),
                 t.message_title,
                 "message",
                 window,
@@ -103,7 +103,7 @@ class Home(Interface):
         )
         self.tools_flow.addWidget(
             Card(
-                FluentIcon.PHOTO,
+                Icon.fromName("GridDots20Regular"),
                 t.char_title,
                 "char",
                 window,
@@ -111,7 +111,7 @@ class Home(Interface):
         )
         self.tools_flow.addWidget(
             Card(
-                FluentIcon.MARKET,
+                Icon.fromName("Calculator20Regular"),
                 t.level_title,
                 "level",
                 window,

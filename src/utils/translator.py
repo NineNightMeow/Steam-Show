@@ -31,6 +31,7 @@ class Translator(QObject):
         super().__init__(parent=parent)
         self.functions = self.tr("Functions")
         self.tools = self.tr("Tools")
+        self.feedback = self.tr("Feedback")
         self.not_logged_in = self.tr("Not logged in")
         self.home_title = self.tr("Home")
         self.home_subtitle = self.tr("Welcome to Steam Show")

@@ -35,7 +35,3 @@ Usage of _PyQt-Fluent-Widgets_ **[Docs](https://qfluentwidgets.com/pages/about)*
 
 > [!WARNING]
 > Please do not mix PyQt and PySide, for the program may crash **[SEE](https://qfluentwidgets.com/pages/install)**
-
-### License
-
-This software is licensed under the CC BY-NC 4.0 license. The software author and copyright holder reserves all rights, including but not limited to the right to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software.

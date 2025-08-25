@@ -6,7 +6,7 @@ from PIL import Image, ImageSequence
 from PyQt5.QtCore import QThread, pyqtSignal
 
 
-class VideoProcessor(QThread):
+class Processor(QThread):
     progress = pyqtSignal(str)
     completed = pyqtSignal(str)
     error = pyqtSignal(str)

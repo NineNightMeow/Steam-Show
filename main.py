@@ -19,5 +19,7 @@ if __name__ == "__main__":
     app.installTranslator(fluentTranslator)
 
     window = MainWindow()
+    window.setMicaEffectEnabled(False)
+    window.setMicaEffectEnabled(True)
 
     sys.exit(app.exec())
