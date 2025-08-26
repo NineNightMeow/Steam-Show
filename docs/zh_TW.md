@@ -1,6 +1,6 @@
 # 簡介
 
-使用 PyQt5 + OpenCV 開發，用於製作與部署 Steam 個人資料展示櫃
+使用 PySide6 + OpenCV 開發，用於製作與部署 Steam 個人資料展示櫃
 
 <img src="screenshot.png" alt="軟體截圖">
 
@@ -31,7 +31,3 @@ _PyQt-Fluent-Widgets_ 的使用方法請參考 **[官方文件](https://qfluentw
 
 > [!WARNING]
 > 請勿混用 PyQt 與 PySide，否則可能導致程式閃退 **[詳見](https://qfluentwidgets.com/pages/install)**
-
-### 法律聲明
-
-本軟體採用 CC BY-NC 4.0 授權，軟體著作作者共同享有版權，僅供個人學習使用，禁止本體與衍生品用於任何商業用途

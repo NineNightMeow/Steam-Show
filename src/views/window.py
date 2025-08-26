@@ -1,8 +1,8 @@
 import os
 
-from PyQt5.QtCore import QUrl, QSize
-from PyQt5.QtGui import QIcon, QDesktopServices
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtCore import QUrl, QSize
+from PySide6.QtGui import QIcon, QDesktopServices
+from PySide6.QtWidgets import QApplication
 from qfluentwidgets import (
     SplashScreen,
     FluentWindow,
@@ -24,6 +24,7 @@ from src.views.char import Char
 from src.views.level import Level
 from src.views.log import Log
 from src.views.about import About
+from src.views.login import Login
 
 from src.user import User
 
@@ -34,9 +35,7 @@ class MainWindow(FluentWindow):
         self._init_window()
 
         self.user = User(self)
-        self.user.infoUpdated.connect(self.onUserInfoUpdated)
-        self.user.loginStatusChanged.connect(self.onLoginStatusChanged)
-        print(f"User Info: {self.user}")
+        self.user.infoUpdated.connect(lambda info: self.onUserInfoUpdated(info))
 
         self.task_stack = []
 
@@ -85,6 +84,7 @@ class MainWindow(FluentWindow):
         self.level_interface = Level()
         self.log_interface = Log()
         self.about_interface = About()
+        self.login_interface = Login()
 
         self.addSubInterface(self.home_interface, None, "")
         self.addSubInterface(self.convert_interface, None, "")
@@ -95,6 +95,7 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.level_interface, None, "")
         self.addSubInterface(self.log_interface, None, "")
         self.addSubInterface(self.about_interface, None, "")
+        self.addSubInterface(self.login_interface, None, "")
 
     def switchInterface(self, interface: str):
         interfaces = {
@@ -107,6 +108,7 @@ class MainWindow(FluentWindow):
             "level": self.level_interface,
             "log": self.log_interface,
             "about": self.about_interface,
+            "login": self.login_interface,
         }
         if interface in interfaces:
             self.switchTo(interfaces[interface])
@@ -119,21 +121,8 @@ class MainWindow(FluentWindow):
             QUrl("https://github.com/NineNightMeow/Steam-Show/issues")
         )
 
-    def onUserInfoUpdated(self):
-        print(f"User Info Updated:")
-        print(f"-> Username: {self.user.getUsername()}")
-        print(f"-> Nickname: {self.user.getNickname()}")
-        print(f"-> SteamID: {self.user.getSteamID()}")
-        print(f"-> Avatar: {self.user.getAvatar()}")
-        print(f"-> Login Status: {self.user.getLoginStatus()}")
-
-        if hasattr(self, "avatar"):
-            self.avatar.updateAvatar(self.user.getAvatar(), self.user.getNickname())
-
-    def onLoginStatusChanged(self, status):
-        print(f"Login Status Changed: {status}")
-
-        self.updateMenu(status)
+    def onUserInfoUpdated(self, info):
+        self.navigation.updateMenu(info.get("status"))
 
     def onThemeChanged(self, theme: str):
         if theme == "Dark":

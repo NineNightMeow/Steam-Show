@@ -1,6 +1,6 @@
 # 概要
 
-PyQt5 + OpenCV を使用して開発された、Steam プロフィール展示用のツール
+PySide6 + OpenCV を使用して開発された、Steam プロフィール展示用のツール
 
 <img src="screenshot.png" alt="ソフトウェアスクリーンショット">
 
@@ -31,7 +31,3 @@ _PyQt-Fluent-Widgets_ の使用方法については、以下を参照してく�
 
 > [!WARNING]
 > PyQt と PySide を混在させないでください。プログラムがクラッシュする可能性があります **[詳細](https://qfluentwidgets.com/pages/install)**
-
-### 法的通知
-
-本ソフトウェアは CC BY-NC 4.0 ライセンスを採用しており、共同著作者が著作権を保有します。個人学習用のみに使用可能で、本体及び派生品の商業利用を禁止します

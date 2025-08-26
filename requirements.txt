@@ -1,6 +1,8 @@
-PyQt5>=5.15.4
-PyQt-Fluent-Widgets>=1.8.6
+PySide6
+PySide6-Fluent-Widgets>=1.8.6
 opencv-python
 numpy
 pillow
+requests
+aiohttp
 Nuitka

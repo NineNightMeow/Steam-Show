@@ -1,167 +1,272 @@
-from PyQt5.QtCore import QTimer, QObject, pyqtSignal
-from qfluentwidgets import SubtitleLabel, IndeterminateProgressBar, MessageBoxBase
+import os
+import json
+import re
+
+from PySide6.QtCore import QObject, Signal
+from qfluentwidgets import Dialog
 
 from src.utils.webview import Webview
-
-
-class LogoutDialog(MessageBoxBase):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.titleLabel = SubtitleLabel(self.tr("Logging out"))
-        self.progressBar = IndeterminateProgressBar(self)
-
-        self.viewLayout.addWidget(self.titleLabel)
-        self.viewLayout.addWidget(self.progressBar)
-        self.yesButton.hide()
-
-        self.widget.setMinimumWidth(350)
+from src.app import App
 
 
 class User(QObject):
     """用户信息"""
 
-    infoUpdated = pyqtSignal()
-    loginStatusChanged = pyqtSignal(bool)
+    infoUpdated = Signal(dict)
+    backgroundUpdated = Signal(str)
+
+    _instance = None
+    _initialized = False
+
+    _info = {
+        "status": False,
+        "id": "",
+        "username": "",
+        "nickname": "",
+        "avatar": "",
+        "avatarFull": "",
+        "background": "",
+    }
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
     def __init__(self, parent=None):
+        if User._initialized:
+            return
         super().__init__(parent)
-        self.loginStatus: bool = False
-        self.steamID: str = ""
-        self.username: str = ""
-        self.nickname: str = ""
-        self.avatar: str = ""
+        User._initialized = True
 
-        self.webview = Webview(parent)
+        self.parent = parent
+
+        # 路径 & 配置文件
+        path = App.getPath("config")
+        self.config = os.path.join(path, "user.json")
+        if not os.path.exists(self.config):
+            with open(self.config, "w") as f:
+                json.dump(User._info, f)
+
+        # 状态
+        self._current_url = ""
+        self._fetching_info = False
+        self._fetching_bg = False
+
+        # Webview
+        self.webview = Webview(self.parent)
         self.webview.hide()
         self.webview.urlChanged.connect(self.onUrlChanged)
-        self.webview.loadFinished.connect(lambda: QTimer.singleShot(1500, self.getInfo))
-        self.webview.open("https://store.steampowered.com/account/")
+        self.webview.loadFinished.connect(self.onLoadFinished)
 
+        # 加载用户信息
+        self.load_user_info()
+        if not User._info["status"]:
+            self.getInfo()
+
+    # ---------------- 公共接口 ----------------
+    @classmethod
+    def get(cls, key, default=None):
+        return cls._info.get(key, default)
+
+    @classmethod
+    def set(cls, key, value):
+        cls._info[key] = value
+        if cls._instance:
+            cls._instance.save_user_info()
+            cls._instance.send_signal()
+
+    @classmethod
+    def all(cls):
+        return dict(cls._info)
+
+    # ---------------- 用户操作 ----------------
     def login(self) -> bool:
-        """登录"""
-        if not self.loginStatus:
-            self.webview.open("https://steamcommunity.com/login/")
-            return True
-        return False
+        if self.parent:
+            self.parent.switchInterface("login")
+        return True
 
     def logout(self) -> None:
-        """注销"""
-        # dialog = LogoutDialog(self)
-        # if not dialog.exec():
-        #    return
+        dialog = Dialog("Confirm Logout", "Are you sure to logout?", self.parent)
+        if dialog.exec():
+            self.webview.run("Logout();")
+            self._clear_user_info()
+            self.login()
 
-        self.webview.run("Logout();")
-        self._clearUserInfo()
-        print("Successfully logged out")
-
-    def getInfo(self) -> bool:
-        """获取用户信息"""
-        if not "store.steampowered.com/account/" in self.webview.url().toString():
-            return
-
-        print("Getting user info...")
-        try:
-            import re
-
-            steam_id_text = (
-                self.webview.run(
-                    """
-            document.querySelector(".youraccount_steamid").textContent;
-            """
-                )
-                or ""
-            )
-            match = re.search(r"\d+", steam_id_text)
-            self.steamID = match.group(0) if match else ""
-            print(f"SteamID: {self.steamID}")
-
-            username_text = (
-                self.webview.run(
-                    """
-            document.querySelector(".youraccount_pageheader").textContent;
-            """
-                )
-                or ""
-            )
-            match = re.search(r"^(.+?)'s Account$", username_text)
-            self.username = match.group(1) if match else ""
-            print(f"Username: {self.username}")
-
-            self.nickname = (
-                self.webview.run(
-                    """
-            document.querySelector(".user_avatar img").alt;
-            """
-                )
-                or ""
-            )
-            print(f"Nickname: {self.nickname}")
-
-            self.avatar = (
-                self.webview.run(
-                    """
-            document.querySelector(".user_avatar img").src;
-            """
-                )
-                or ""
-            )
-            print(f"Avatar: {self.avatar}")
-
-            # 验证登录状态
-            old_status = self.loginStatus
-            self.loginStatus = bool(self.steamID and self.username)
-
-            self.infoUpdated.emit()
-            if old_status != self.loginStatus:
-                self.loginStatusChanged.emit(self.loginStatus)
-
-            return self.loginStatus
-
-        except Exception as e:
-            print(f"获取用户信息失败: {e}")
-            old_status = self.loginStatus
-            self.loginStatus = False
-            if old_status != self.loginStatus:
-                self.loginStatusChanged.emit(self.loginStatus)
-            return False
-
-    def getLoginStatus(self) -> bool:
-        return self.loginStatus
-
-    def getSteamID(self) -> str:
-        return self.steamID
-
-    def getUsername(self) -> str:
-        return self.username
-
-    def getNickname(self) -> str:
-        return self.nickname
-
-    def getAvatar(self) -> str:
-        return self.avatar
-
-    def onUrlChanged(self, url) -> None:
-        current_url = url.toString()
-
-        if "login" in current_url:
-            self._clearUserInfo()
+    # ---------------- 获取信息 ----------------
+    def getInfo(self):
+        print(f"⚡ getInfo() called. Current URL: {self._current_url}")
+        if "store.steampowered.com/account/" in self._current_url:
+            if self._fetching_info:
+                return
+            self._fetching_info = True
+            print("Getting user info...")
+            self.webview.run(self._js_user_info(), self._on_info_result)
         else:
             self.webview.open("https://store.steampowered.com/account/")
 
-    def _clearUserInfo(self) -> None:
-        """清空用户信息"""
-        old_status = self.loginStatus
-        self.loginStatus = False
-        self.steamID = ""
-        self.username = ""
-        self.nickname = ""
-        self.avatar = ""
+    def getBg(self):
+        if "profiles/" in self._current_url or "id/" in self._current_url:
+            if self._fetching_bg:
+                return
+            self._fetching_bg = True
+            print("Getting background image...")
+            self.webview.run(self._js_background(), self._on_bg_result)
+        else:
+            if User._info["id"]:
+                url = f"https://steamcommunity.com/profiles/{User._info['id']}"
+                print(f"Opening profile page: {url}")
+                self.webview.open(url)
+            else:
+                print("Failed to fetch background image: No user ID")
 
-        if old_status != self.loginStatus:
-            self.loginStatusChanged.emit(self.loginStatus)
-        self.infoUpdated.emit()
+    # ---------------- 结果处理 ----------------
+    def _on_info_result(self, result_json):
+        self._fetching_info = False
+        try:
+            result = json.loads(result_json or "{}")
+            if result.get("error"):
+                print(f"Failed to get user info: {result['error']}")
+                return
 
-    @property
-    def is_authenticated(self) -> bool:
-        """检查认证状态"""
-        return self.loginStatus and all([self.steamID, self.username])
+            if not result.get("isLoggedIn"):
+                print("Not logged in")
+                self._clear_user_info()
+                return
+
+            self._update_user_info(result)
+            self.save_user_info()
+            self.send_signal()
+
+        except Exception as e:
+            print(f"Failed to parse user info: {e}")
+            self._clear_user_info()
+
+    def _on_bg_result(self, result):
+        self._fetching_bg = False
+        if result:
+            User._info["background"] = result
+            self.backgroundUpdated.emit(result)
+            print("Successfully fetched background image:", result)
+        else:
+            self.backgroundUpdated.emit("")
+            print("Failed to fetch background image")
+
+    # ---------------- 内部工具 ----------------
+    def _update_user_info(self, result: dict):
+        steamID = self._extract_steam_id(result.get("steamID", ""))
+        username = self._extract_username(result.get("username", ""))
+        nickname = result.get("nickname", username)
+        avatar = result.get("avatar", "")
+
+        User._info.update(
+            {
+                "status": bool(steamID and username),
+                "id": steamID,
+                "username": username,
+                "nickname": nickname,
+                "avatar": avatar,
+                "avatarFull": avatar.replace(".jpg", "_full.jpg") if avatar else "",
+            }
+        )
+
+    def _extract_steam_id(self, text):
+        m = re.search(r"\d+", text)
+        return m.group(0) if m else ""
+
+    def _extract_username(self, text):
+        m = re.search(r"^(.+?)'s Account$", text)
+        return m.group(1) if m else text
+
+    def _clear_user_info(self):
+        User._info.update(
+            {
+                "status": False,
+                "id": "",
+                "username": "",
+                "nickname": "",
+                "avatar": "",
+                "avatarFull": "",
+                "background": "",
+            }
+        )
+        self.send_signal()
+        print("Successfully cleared user info")
+
+    # ---------------- 存取 ----------------
+    def save_user_info(self):
+        with open(self.config, "w") as f:
+            json.dump(User._info, f)
+        print("Successfully saved user info")
+
+    def load_user_info(self):
+        try:
+            with open(self.config, "r") as f:
+                User._info = json.load(f)
+            self.send_signal()
+        except FileNotFoundError:
+            print("Failed to load user info: File not found")
+
+    def send_signal(self):
+        print(f"╭─ User Info Updated: ───")
+        for k, v in User._info.items():
+            print(f"│ {k}: {v}")
+        print(f"╰─────────────────")
+        self.infoUpdated.emit(dict(User._info))
+
+    # ---------------- 事件回调 ----------------
+    def onUrlChanged(self, url):
+        self._current_url = url.toString()
+        if "login/" in self._current_url or "login=true" in self._current_url:
+            self._clear_user_info()
+
+    def onLoadFinished(self, success: bool):
+        if success:
+            if "account/" in self._current_url:
+                self.getInfo()
+            elif "profiles/" in self._current_url or "id/" in self._current_url:
+                self.getBg()
+
+    # ---------------- JS 脚本 ----------------
+    def _js_user_info(self):
+        return """
+        (function() {
+            try {
+                var steamIDElement = document.querySelector(".youraccount_steamid");
+                var headerElement = document.querySelector(".youraccount_pageheader");
+                var avatarElement = document.querySelector(".user_avatar img");
+
+                var steamID = steamIDElement ? steamIDElement.textContent.trim() : "";
+                var username = headerElement ? headerElement.textContent.trim() : "";
+                var nickname = avatarElement ? avatarElement.alt : "";
+                var avatar = avatarElement ? avatarElement.src : "";
+
+                var isLoggedIn = !document.querySelector(".youraccount_login");
+
+                return JSON.stringify({
+                    steamID: steamID,
+                    username: username,
+                    nickname: nickname,
+                    avatar: avatar,
+                    isLoggedIn: isLoggedIn
+                });
+            } catch (e) {
+                return JSON.stringify({error: e.message});
+            }
+        })();
+        """
+
+    def _js_background(self):
+        return """
+        (function() {
+            var bgElement = document.querySelectorAll(".has_profile_background")[1];
+            if (bgElement) {
+                var style = window.getComputedStyle(bgElement);
+                var bgImage = style.backgroundImage;
+                if (bgImage.startsWith('url("') && bgImage.endsWith('")')) {
+                    return bgImage.slice(5, -2);
+                }
+            }
+            return "";
+        })();
+        """

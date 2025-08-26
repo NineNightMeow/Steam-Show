@@ -1,12 +1,12 @@
 import os
 
-from PyQt5.QtCore import (
+from PySide6.QtCore import (
     Qt,
     QUrl,
     QPoint,
     QRect,
 )
-from PyQt5.QtGui import (
+from PySide6.QtGui import (
     QFont,
     QImage,
     QPainter,
@@ -15,7 +15,7 @@ from PyQt5.QtGui import (
     QDesktopServices,
 )
 
-from PyQt5.QtWidgets import QWidget
+from PySide6.QtWidgets import QWidget
 from qfluentwidgets import (
     NavigationInterface,
     NavigationWidget,
@@ -27,12 +27,13 @@ from qfluentwidgets import (
     Action,
     RoundMenu,
     MenuAnimationType,
-    FluentIcon,
     isDarkTheme,
 )
 
 from src.utils.translator import Translator
 from src.icons.icons import Icon
+from src.utils.avatar import getAvatar
+from src.user import User
 
 t = Translator()
 
@@ -106,24 +107,19 @@ class NavClassTitle(NavigationWidget):
 class NavAvatar(NavigationWidget):
     def __init__(self, url="", alt="", parent=None):
         super().__init__(isSelectable=False, parent=parent)
-        avatarUrl = os.path.join("src", "images", "default-avatar.png")
-        if url:
-            avatarUrl = url
-        self.avatar = QImage(avatarUrl).scaled(
-            24, 24, Qt.KeepAspectRatio, Qt.SmoothTransformation
-        )
-        self.alt = t.not_logged_in
-        if alt:
-            self.alt = alt
+        self.default_path = os.path.join("src", "images", "default-avatar.png")
+        self.avatar_url = url
+        self.alt_text = alt or t.not_logged_in
+        self.avatar = QImage()
+        self._load_avatar()
+
+    def _load_avatar(self):
+        self.avatar = getAvatar(self.avatar_url)
 
     def updateAvatar(self, url, alt):
-        if url:
-            self.avatar = QImage(url).scaled(
-                24, 24, Qt.KeepAspectRatio, Qt.SmoothTransformation
-            )
-        self.alt = t.not_logged_in
-        if alt:
-            self.alt = alt
+        self.avatar_url = url
+        self.alt_text = alt or t.not_logged_in
+        self._load_avatar()
         self.update()
 
     def paintEvent(self, e):
@@ -143,7 +139,6 @@ class NavAvatar(NavigationWidget):
             painter.setBrush(QColor(80, 80, 80))
         else:
             painter.setBrush(QColor(240, 240, 240))
-
         painter.drawEllipse(8, 6, 24, 24)
 
         if not self.avatar.isNull():
@@ -165,16 +160,14 @@ class NavAvatar(NavigationWidget):
             font = QFont("Segoe UI")
             font.setPixelSize(14)
             painter.setFont(font)
-            painter.drawText(QRect(44, 0, 255, 36), Qt.AlignVCenter, self.alt)
+            painter.drawText(QRect(44, 0, 255, 36), Qt.AlignVCenter, self.alt_text)
 
 
 class ProfileCard(QWidget):
     def __init__(self, avatar: str, nickname: str, steamID: str, parent=None):
         super().__init__(parent=parent)
-        avatarUrl = os.path.join("src", "images", "default-avatar.png")
-        if avatar:
-            avatarUrl = avatar
-        self.avatar = AvatarWidget(avatarUrl, self)
+
+        self.avatar = AvatarWidget("", self)
         self.avatar.setText(nickname)
         self.nameLabel = BodyLabel(nickname if nickname else t.not_logged_in, self)
         self.idLabel = CaptionLabel(steamID if steamID else "", self)
@@ -186,30 +179,28 @@ class ProfileCard(QWidget):
         self.idLabel.setTextColor(QColor(96, 96, 96), QColor(206, 206, 206))
         self.idLabel.move(64, 32)
 
+        self._load_avatar(avatar)
+
+    def _load_avatar(self, avatar_url):
+        self.avatar.setImage(getAvatar(avatar_url, (48, 48)))
+
 
 class Navigation(NavigationInterface):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.parent = parent
-        self.user = self.parent.user
 
         self.initNavigation()
 
     def createNavItems(self):
         self.avatar = NavAvatar(
-            url=self.user.getAvatar(),
-            alt=self.user.getNickname(),
-            parent=self,
-        )
-        self.profile_card = ProfileCard(
-            self.user.getAvatar(),
-            self.user.getNickname(),
-            self.user.getSteamID(),
+            url=User.get("avatar"),
+            alt=User.get("nickname"),
             parent=self,
         )
 
         self.profile_menu = RoundMenu(parent=self)
-        self.updateMenu(self.user.getLoginStatus())
+        self.updateMenu(User.get("status"))
 
         self.functions = NavClassTitle(t.functions, self)
         self.tools = NavClassTitle(t.tools, self)
@@ -273,7 +264,7 @@ class Navigation(NavigationInterface):
             routeKey="avatar",
             widget=self.avatar,
             onClick=lambda: self.showMenu(),
-            tooltip=self.user.getNickname() or t.not_logged_in,
+            tooltip=User.get("nickname") or t.not_logged_in,
         )
         self.addWidget(
             routeKey="home",
@@ -369,28 +360,33 @@ class Navigation(NavigationInterface):
             self.tools.hide()
 
     def updateMenu(self, status):
-        self.profile_menu.clear()
+        self.avatar.updateAvatar(User.get("avatar"), User.get("nickname"))
 
+        self.profile_card = ProfileCard(
+            User.get("avatarFull"),
+            User.get("nickname"),
+            User.get("id"),
+            parent=self,
+        )
+
+        self.profile_menu.clear()
         self.profile_menu.addWidget(self.profile_card, selectable=False)
         if status:
             self.profile_menu.addAction(
                 Action(
-                    FluentIcon.DOCUMENT,
+                    Icon.fromName("DocumentPerson20Regular"),
                     self.tr("Your Profile"),
                     triggered=lambda: QDesktopServices.openUrl(
-                        QUrl(
-                            f"https://steamcommunity.com/profiles/{self.user.getSteamID()}"
-                        )
+                        QUrl(f"https://steamcommunity.com/profiles/{User.get('id')}")
                     ),
                 )
             )
-        self.profile_menu.addSeparator()
         if status:
             self.profile_menu.addAction(
                 Action(
                     Icon.fromName("ArrowExit20Regular"),
                     self.tr("Logout"),
-                    triggered=lambda: self.user.logout(),
+                    triggered=lambda: User(self.parent).logout(),
                 )
             )
         else:
@@ -398,7 +394,7 @@ class Navigation(NavigationInterface):
                 Action(
                     Icon.fromName("ArrowEnter20Regular"),
                     self.tr("Login"),
-                    triggered=lambda: self.user.login(),
+                    triggered=lambda: User(self.parent).login(),
                 )
             )
 

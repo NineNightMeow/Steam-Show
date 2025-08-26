@@ -1,15 +1,19 @@
 import os
+import requests
 
-from PyQt5.QtCore import QUrl
-from PyQt5.QtGui import QDesktopServices
-from PyQt5.QtWidgets import QWidget, QLineEdit, QVBoxLayout, QHBoxLayout, QFileDialog
+from PySide6.QtCore import QUrl
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QWidget, QLineEdit, QVBoxLayout, QHBoxLayout, QFileDialog
 from qfluentwidgets import (
+    ToolButton,
     PrimaryPushButton,
     LineEdit,
     SpinBox,
     CompactSpinBox,
     IconWidget,
     Action,
+    ToolTipFilter,
+    ToolTipPosition,
     CardGroupWidget,
     GroupHeaderCardWidget,
     SegmentedWidget,
@@ -19,6 +23,8 @@ from src.views.interface import Interface, InfoTip, StateTip
 from src.utils.translator import Translator
 from src.utils.processor import Processor
 from src.icons.icons import Icon
+from src.app import App
+from src.user import User
 
 
 class FilesCard(GroupHeaderCardWidget):
@@ -56,8 +62,24 @@ class FilesCard(GroupHeaderCardWidget):
         )
 
         # 背景图片
+        self.background_path_widget = QWidget(self)
+        self.background_path_widget.setFixedWidth(INPUT_WIDTH)
+        self.background_path_layout = QHBoxLayout(self.background_path_widget)
+        self.background_path_layout.setContentsMargins(0, 0, 0, 0)
+        self.background_path_layout.setSpacing(10)
+
+        self.steam_button = ToolButton(Icon.fromName("ArrowDownload20Regular"))
+        self.steam_button.setToolTip(self.tr("Get Steam background"))
+        self.steam_button.installEventFilter(
+            ToolTipFilter(
+                self.steam_button,
+                showDelay=300,
+                position=ToolTipPosition.TOP,
+            )
+        )
+        self.steam_button.clicked.connect(self.get_steam_bg)
+
         self.background_path = LineEdit()
-        self.background_path.setFixedWidth(INPUT_WIDTH)
         self.background_button = Action(
             FluentIcon.FOLDER,
             self.tr("Browse"),
@@ -66,6 +88,8 @@ class FilesCard(GroupHeaderCardWidget):
         self.background_path.addAction(
             self.background_button, QLineEdit.TrailingPosition
         )
+        self.background_path_layout.addWidget(self.steam_button)
+        self.background_path_layout.addWidget(self.background_path)
 
         # 输出目录
         self.output_path = LineEdit()
@@ -106,7 +130,7 @@ class FilesCard(GroupHeaderCardWidget):
 
         self.input_group.addWidget(self.input_path)
         self.foreground_group.addWidget(self.foreground_path)
-        self.background_group.addWidget(self.background_path)
+        self.background_group.addWidget(self.background_path_widget)
         self.output_group.addWidget(self.output_path)
 
         self.vBoxLayout.addWidget(self.input_group)
@@ -128,6 +152,36 @@ class FilesCard(GroupHeaderCardWidget):
         if dir_path:
             self.output_path.setText(dir_path)
 
+    def get_steam_bg(self):
+        InfoTip(
+            message=self.tr("Getting Steam background..."), parent=self.parent.window
+        )
+        self.parent.user = User(self.parent)
+        self.user.getBg()
+        self.user.backgroundUpdated.connect(lambda url: self.insert_bg(url))
+
+    def insert_bg(self, bg_url):
+        if bg_url:
+            temp_dir = App.getPath("temp")
+            if not os.path.exists(temp_dir):
+                os.makedirs(temp_dir)
+            file_name = bg_url.split("/")[-1]
+            file_path = os.path.join(temp_dir, file_name)
+            if not os.path.exists(file_path):
+                response = requests.get(bg_url, stream=True)
+                if response.status_code == 200:
+                    with open(file_path, "wb") as f:
+                        for chunk in response.iter_content(chunk_size=1024):
+                            if chunk:
+                                f.write(chunk)
+            self.background_path.setText(file_path)
+
+            InfoTip(
+                type="success",
+                message=self.tr("Successfully downloaded Steam background"),
+                parent=self.parent.window,
+            )
+
     def updateContents(self, type: str = "workshop"):
         if type == "workshop":
             self.input_group.show()
@@ -137,6 +191,11 @@ class FilesCard(GroupHeaderCardWidget):
             self.input_group.hide()
             self.foreground_group.show()
             self.background_group.show()
+
+        if User.get("status"):
+            self.steam_button.show()
+        else:
+            self.steam_button.hide()
 
 
 class ArgsCard(GroupHeaderCardWidget):
@@ -293,7 +352,6 @@ class ArgsCard(GroupHeaderCardWidget):
         type: str = "workshop",
         file_type: str = "image",
     ):
-        print(type, file_type)
         if type == "workshop":
             self.split_group.show()
         elif type == "artwork":

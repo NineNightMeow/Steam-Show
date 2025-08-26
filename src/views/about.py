@@ -1,6 +1,6 @@
-from PyQt5.QtCore import Qt, QUrl
-from PyQt5.QtGui import QDesktopServices
-from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QTableWidgetItem
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QTableWidgetItem
 from qfluentwidgets import (
     IconWidget,
     BodyLabel,
@@ -15,7 +15,7 @@ from qfluentwidgets import (
 
 from src.views.interface import Interface, Separator
 from src.utils.translator import Translator
-from src.version import __version__
+from src.app import App
 
 
 class CreditsCard(ExpandGroupSettingCard):
@@ -128,7 +128,7 @@ class About(Interface):
         self.version_card = Card(
             icon=FluentIcon.APPLICATION,
             title=self.tr("App Version"),
-            content=__version__,
+            content=App().getVersion(),
             action=PrimaryPushButton(self.tr("Check Update")),
             event=self.checkUpdate,
             parent=self,

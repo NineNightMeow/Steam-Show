@@ -1,8 +1,15 @@
 import os
 
-from PyQt5.QtCore import Qt, QRectF
-from PyQt5.QtGui import QPixmap, QPainter, QColor, QBrush, QPainterPath, QLinearGradient
-from PyQt5.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtCore import Qt, QRectF
+from PySide6.QtGui import (
+    QPixmap,
+    QPainter,
+    QColor,
+    QBrush,
+    QPainterPath,
+    QLinearGradient,
+)
+from PySide6.QtWidgets import QWidget, QVBoxLayout
 from qfluentwidgets import (
     SubtitleLabel,
     IconWidget,
@@ -135,6 +142,10 @@ class Home(Interface):
 
     def paintEvent(self, e):
         super().paintEvent(e)
+
+        if self.banner.isNull():
+            return
+
         painter = QPainter(self)
         painter.setRenderHints(QPainter.SmoothPixmapTransform | QPainter.Antialiasing)
         painter.setPen(Qt.NoPen)
@@ -158,6 +169,7 @@ class Home(Interface):
             gradient.setColorAt(1, QColor(0, 0, 0, 0))
 
         painter.fillPath(path, QBrush(gradient))
+        pixmap = self.banner.scaled(w, h, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+        painter.drawPixmap(0, 0, pixmap)
 
-        pixmap = self.banner.scaled(w, h, transformMode=Qt.SmoothTransformation)
-        painter.fillPath(path, QBrush(pixmap))
+        painter.end()

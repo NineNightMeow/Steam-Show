@@ -2,9 +2,9 @@ import sys
 import os
 import inspect
 
-from PyQt5.QtCore import QUrl
-from PyQt5.QtGui import QDesktopServices
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
+from PySide6.QtCore import QUrl
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
 from qfluentwidgets import PushButton, TextBrowser, FluentIcon
 
 from src.views.interface import Interface
@@ -78,7 +78,7 @@ class Log(Interface):
         )
 
     def save_log(self):
-        from PyQt5.QtWidgets import QFileDialog
+        from PySide6.QtWidgets import QFileDialog
 
         file_path, _ = QFileDialog.getSaveFileName(
             self, self.tr("Save"), "log.txt", self.tr("Text files (*.txt)")

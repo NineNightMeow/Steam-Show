@@ -1,5 +1,6 @@
-from qfluentwidgets import FluentFontIconBase, Theme
 import os
+
+from qfluentwidgets import FluentFontIconBase, Theme
 
 
 class Icon(FluentFontIconBase):

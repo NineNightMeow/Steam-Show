@@ -4,7 +4,7 @@
 
 # Introduction
 
-Developed by PyQt5 + OpenCV, used to create and deploy Steam personal profile showcases
+Developed by PySide6 + OpenCV, used to create and deploy Steam personal profile showcases
 
 <img src="docs/screenshot.png" alt="screenshot">
 

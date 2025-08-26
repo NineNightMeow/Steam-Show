@@ -1,7 +1,7 @@
 import sys
 
-from PyQt5.QtCore import QLocale, QTranslator
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtCore import QLocale, QTranslator
+from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentTranslator
 
 from src.views.window import MainWindow

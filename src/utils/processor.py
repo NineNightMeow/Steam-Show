@@ -3,13 +3,13 @@ import os
 import subprocess
 
 from PIL import Image, ImageSequence
-from PyQt5.QtCore import QThread, pyqtSignal
+from PySide6.QtCore import QThread, Signal
 
 
 class Processor(QThread):
-    progress = pyqtSignal(str)
-    completed = pyqtSignal(str)
-    error = pyqtSignal(str)
+    progress = Signal(str)
+    completed = Signal(str)
+    error = Signal(str)
 
     def __init__(
         self,

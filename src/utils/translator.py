@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QObject, QLocale
+from PySide6.QtCore import QObject, QLocale
 
 
 def getLang(langCode: str) -> str:
@@ -46,3 +46,4 @@ class Translator(QObject):
         self.log_title = self.tr("Log")
         self.log_subtitle = self.tr("Please send logs here to the developers")
         self.about_title = self.tr("About")
+        self.login_title = self.tr("Login")
