@@ -102,17 +102,17 @@ class FilesCard(GroupHeaderCardWidget):
         self.input_group = CardGroupWidget(
             Icon.fromName("FilmstripImage20Regular"),
             self.tr("Input path"),
-            "Video or image",
+            self.tr("Video or image"),
         )
         self.foreground_group = CardGroupWidget(
             Icon.fromName("FilmstripImage20Regular"),
             self.tr("Foreground path"),
-            "Video or image",
+            self.tr("Video or image"),
         )
         self.background_group = CardGroupWidget(
             Icon.fromName("Image20Regular"),
             self.tr("Background path"),
-            "Static image",
+            self.tr("Static image"),
         )
         self.output_group = CardGroupWidget(
             Icon.fromName("SaveImage20Regular"),
@@ -156,7 +156,7 @@ class FilesCard(GroupHeaderCardWidget):
         InfoTip(
             message=self.tr("Getting Steam background..."), parent=self.parent.window
         )
-        self.parent.user = User(self.parent)
+        self.user = User(self.parent)
         self.user.getBg()
         self.user.backgroundUpdated.connect(lambda url: self.insert_bg(url))
 
@@ -305,12 +305,12 @@ class ArgsCard(GroupHeaderCardWidget):
         self.duration_group = CardGroupWidget(
             Icon.fromName("Clock20Regular"),
             self.tr("Duration"),
-            "Units: s",
+            self.tr("Units: s"),
         )
         self.size_group = CardGroupWidget(
             Icon.fromName("Resize20Regular"),
             self.tr("Size"),
-            "Units: px",
+            self.tr("Units: px"),
         )
         self.split_group = CardGroupWidget(
             Icon.fromName("ImageSplit20Regular"),
@@ -320,7 +320,7 @@ class ArgsCard(GroupHeaderCardWidget):
         self.max_size_group = CardGroupWidget(
             Icon.fromName("FolderZip20Regular"),
             self.tr("Max size"),
-            "Units: MB",
+            self.tr("Units: MB"),
         )
         self.hex_group = CardGroupWidget(
             Icon.fromName("Hexagon20Regular"),

@@ -14,7 +14,6 @@ from PySide6.QtGui import (
     QBrush,
     QDesktopServices,
 )
-
 from PySide6.QtWidgets import QWidget
 from qfluentwidgets import (
     NavigationInterface,
@@ -27,15 +26,15 @@ from qfluentwidgets import (
     Action,
     RoundMenu,
     MenuAnimationType,
+    FluentIcon,
     isDarkTheme,
 )
+from qframelesswindow.utils import getSystemAccentColor
 
 from src.utils.translator import Translator
 from src.icons.icons import Icon
 from src.utils.avatar import getAvatar
 from src.user import User
-
-t = Translator()
 
 
 class NavItem(NavigationWidget):
@@ -81,7 +80,7 @@ class NavItem(NavigationWidget):
         if not self.isCompacted:
             color = "#ffffff" if isDarkTheme() else "#000000"
             painter.setPen(QColor(color))
-            font = QFont("Segoe UI")
+            font = QFont()
             font.setPixelSize(14)
             painter.setFont(font)
             painter.drawText(QRect(44, 0, 255, 36), Qt.AlignVCenter, self.text)
@@ -98,7 +97,7 @@ class NavClassTitle(NavigationWidget):
         painter.setPen(Qt.NoPen)
         color = "#d2d2d2" if isDarkTheme() else "#606060"
         painter.setPen(QColor(color))
-        font = QFont("Segoe UI")
+        font = QFont()
         font.setPixelSize(14)
         painter.setFont(font)
         painter.drawText(QRect(10, 0, 255, 36), Qt.AlignVCenter, self.text)
@@ -109,7 +108,7 @@ class NavAvatar(NavigationWidget):
         super().__init__(isSelectable=False, parent=parent)
         self.default_path = os.path.join("src", "images", "default-avatar.png")
         self.avatar_url = url
-        self.alt_text = alt or t.not_logged_in
+        self.alt_text = alt or self.t.not_logged_in
         self.avatar = QImage()
         self._load_avatar()
 
@@ -118,7 +117,7 @@ class NavAvatar(NavigationWidget):
 
     def updateAvatar(self, url, alt):
         self.avatar_url = url
-        self.alt_text = alt or t.not_logged_in
+        self.alt_text = alt or self.t.not_logged_in
         self._load_avatar()
         self.update()
 
@@ -157,7 +156,7 @@ class NavAvatar(NavigationWidget):
         if not self.isCompacted:
             color = QColor(255, 255, 255) if isDarkTheme() else QColor(0, 0, 0)
             painter.setPen(color)
-            font = QFont("Segoe UI")
+            font = QFont()
             font.setPixelSize(14)
             painter.setFont(font)
             painter.drawText(QRect(44, 0, 255, 36), Qt.AlignVCenter, self.alt_text)
@@ -169,7 +168,7 @@ class ProfileCard(QWidget):
 
         self.avatar = AvatarWidget("", self)
         self.avatar.setText(nickname)
-        self.nameLabel = BodyLabel(nickname if nickname else t.not_logged_in, self)
+        self.nameLabel = BodyLabel(nickname if nickname else self.t.not_logged_in, self)
         self.idLabel = CaptionLabel(steamID if steamID else "", self)
 
         self.setFixedSize(250, 72)
@@ -189,10 +188,13 @@ class Navigation(NavigationInterface):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.parent = parent
+        self.t = Translator()
 
         self.initNavigation()
 
     def createNavItems(self):
+        themeColor = getSystemAccentColor()
+
         self.avatar = NavAvatar(
             url=User.get("avatar"),
             alt=User.get("nickname"),
@@ -202,59 +204,59 @@ class Navigation(NavigationInterface):
         self.profile_menu = RoundMenu(parent=self)
         self.updateMenu(User.get("status"))
 
-        self.functions = NavClassTitle(t.functions, self)
-        self.tools = NavClassTitle(t.tools, self)
+        self.functions = NavClassTitle(self.t.functions, self)
+        self.tools = NavClassTitle(self.t.tools, self)
 
         self.home = NavItem(
             Icon.fromName("Home20Regular"),
-            Icon.fromName("Home20Filled"),
-            t.home_title,
+            Icon.fromName("Home20Filled").icon(color=themeColor),
+            self.t.home_title,
         )
         self.convert = NavItem(
             Icon.fromName("ArrowSyncCircle20Regular"),
-            Icon.fromName("ArrowSyncCircle20Filled"),
-            t.convert_title,
+            Icon.fromName("ArrowSyncCircle20Filled").icon(color=themeColor),
+            self.t.convert_title,
         )
         self.deployment = NavItem(
             Icon.fromName("CloudArrowUp20Regular"),
-            Icon.fromName("CloudArrowUp20Filled"),
-            t.deployment_title,
+            Icon.fromName("CloudArrowUp20Filled").icon(color=themeColor),
+            self.t.deployment_title,
         )
         self.editor = NavItem(
             Icon.fromName("EditLineHorizontal320Regular"),
-            Icon.fromName("EditLineHorizontal320Filled"),
-            t.editor_title,
+            Icon.fromName("EditLineHorizontal320Filled").icon(color=themeColor),
+            self.t.editor_title,
         )
         self.message = NavItem(
             Icon.fromName("ChatArrowBackDown20Regular"),
-            Icon.fromName("ChatArrowBackDown20Filled"),
-            t.message_title,
+            Icon.fromName("ChatArrowBackDown20Filled").icon(color=themeColor),
+            self.t.message_title,
         )
         self.char = NavItem(
             Icon.fromName("GridDots20Regular"),
-            Icon.fromName("GridDots20Filled"),
-            t.char_title,
+            Icon.fromName("GridDots20Filled").icon(color=themeColor),
+            self.t.char_title,
         )
         self.level = NavItem(
             Icon.fromName("Calculator20Regular"),
-            Icon.fromName("Calculator20Filled"),
-            t.level_title,
+            Icon.fromName("Calculator20Filled").icon(color=themeColor),
+            self.t.level_title,
         )
         self.feedback = NavItem(
             Icon.fromName("PersonFeedback20Regular"),
-            Icon.fromName("PersonFeedback20Filled"),
-            t.feedback,
+            Icon.fromName("PersonFeedback20Filled").icon(color=themeColor),
+            self.t.feedback,
             selectable=False,
         )
         self.log = NavItem(
             Icon.fromName("PulseSquare20Regular"),
-            Icon.fromName("PulseSquare20Filled"),
-            t.log_title,
+            Icon.fromName("PulseSquare20Filled").icon(color=themeColor),
+            self.t.log_title,
         )
         self.about = NavItem(
             Icon.fromName("Info20Regular"),
-            Icon.fromName("Info20Filled"),
-            t.about_title,
+            Icon.fromName("Info20Filled").icon(color=themeColor),
+            self.t.about_title,
         )
 
     def initNavigation(self):
@@ -264,13 +266,13 @@ class Navigation(NavigationInterface):
             routeKey="avatar",
             widget=self.avatar,
             onClick=lambda: self.showMenu(),
-            tooltip=User.get("nickname") or t.not_logged_in,
+            tooltip=User.get("nickname") or self.t.not_logged_in,
         )
         self.addWidget(
             routeKey="home",
             widget=self.home,
             onClick=lambda: self.parent.switchInterface("home"),
-            tooltip=t.home_title,
+            tooltip=self.t.home_title,
         )
         self.addSeparator()
         self.addWidget(
@@ -281,13 +283,13 @@ class Navigation(NavigationInterface):
             routeKey="convert",
             widget=self.convert,
             onClick=lambda: self.parent.switchInterface("convert"),
-            tooltip=t.convert_title,
+            tooltip=self.t.convert_title,
         )
         self.addWidget(
             routeKey="deployment",
             widget=self.deployment,
             onClick=lambda: self.parent.switchInterface("deployment"),
-            tooltip=t.deployment_title,
+            tooltip=self.t.deployment_title,
         )
         self.addSeparator()
         self.addWidget(
@@ -298,25 +300,25 @@ class Navigation(NavigationInterface):
             routeKey="editor",
             widget=self.editor,
             onClick=lambda: self.parent.switchInterface("editor"),
-            tooltip=t.editor_title,
+            tooltip=self.t.editor_title,
         )
         self.addWidget(
             routeKey="message",
             widget=self.message,
             onClick=lambda: self.parent.switchInterface("message"),
-            tooltip=t.message_title,
+            tooltip=self.t.message_title,
         )
         self.addWidget(
             routeKey="char",
             widget=self.char,
             onClick=lambda: self.parent.switchInterface("char"),
-            tooltip=t.char_title,
+            tooltip=self.t.char_title,
         )
         self.addWidget(
             routeKey="level",
             widget=self.level,
             onClick=lambda: self.parent.switchInterface("level"),
-            tooltip=t.level_title,
+            tooltip=self.t.level_title,
         )
 
         self.addWidget(
@@ -324,14 +326,14 @@ class Navigation(NavigationInterface):
             widget=self.feedback,
             onClick=lambda: self.parent.openFeedback(),
             position=NavigationItemPosition.BOTTOM,
-            tooltip=t.feedback,
+            tooltip=self.t.feedback,
         )
         self.addWidget(
             routeKey="log",
             widget=self.log,
             onClick=lambda: self.parent.switchInterface("log"),
             position=NavigationItemPosition.BOTTOM,
-            tooltip=t.log_title,
+            tooltip=self.t.log_title,
         )
         self.addSeparator(position=NavigationItemPosition.BOTTOM)
         self.addWidget(
@@ -339,7 +341,7 @@ class Navigation(NavigationInterface):
             widget=self.about,
             onClick=lambda: self.parent.switchInterface("about"),
             position=NavigationItemPosition.BOTTOM,
-            tooltip=t.about_title,
+            tooltip=self.t.about_title,
         )
 
         self.functions.hide()
@@ -372,27 +374,28 @@ class Navigation(NavigationInterface):
         self.profile_menu.clear()
         self.profile_menu.addWidget(self.profile_card, selectable=False)
         if status:
-            self.profile_menu.addAction(
-                Action(
-                    Icon.fromName("DocumentPerson20Regular"),
-                    self.tr("Your Profile"),
-                    triggered=lambda: QDesktopServices.openUrl(
-                        QUrl(f"https://steamcommunity.com/profiles/{User.get('id')}")
+            self.profile_menu.addActions(
+                [
+                    Action(
+                        FluentIcon.DOCUMENT,
+                        self.tr("Your Profile"),
+                        triggered=lambda: QDesktopServices.openUrl(
+                            QUrl(
+                                f"https://steamcommunity.com/profiles/{User.get('id')}"
+                            )
+                        ),
                     ),
-                )
-            )
-        if status:
-            self.profile_menu.addAction(
-                Action(
-                    Icon.fromName("ArrowExit20Regular"),
-                    self.tr("Logout"),
-                    triggered=lambda: User(self.parent).logout(),
-                )
+                    Action(
+                        FluentIcon.EMBED,
+                        self.tr("Logout"),
+                        triggered=lambda: User(self.parent).logout(),
+                    ),
+                ]
             )
         else:
             self.profile_menu.addAction(
                 Action(
-                    Icon.fromName("ArrowEnter20Regular"),
+                    FluentIcon.EMBED,
                     self.tr("Login"),
                     triggered=lambda: User(self.parent).login(),
                 )

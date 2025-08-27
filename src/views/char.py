@@ -38,7 +38,7 @@ class Char(Interface):
 
     def select_image(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, self.tr("Select Image"), "", "Image Files (*.jpg *.png)"
+            self, self.tr("Select Image"), "", self.tr("Image Files") + " (*.png *.jpg)"
         )
         if file_path:
             self.file_path = file_path

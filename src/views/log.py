@@ -81,7 +81,10 @@ class Log(Interface):
         from PySide6.QtWidgets import QFileDialog
 
         file_path, _ = QFileDialog.getSaveFileName(
-            self, self.tr("Save"), "log.txt", self.tr("Text files (*.txt)")
+            self,
+            self.tr("Save"),
+            "log.txt",
+            self.tr("Text files") + " (*.txt)",
         )
         if file_path:
             with open(file_path, "w", encoding="utf-8") as file:

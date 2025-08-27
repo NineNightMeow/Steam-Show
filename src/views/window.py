@@ -58,7 +58,7 @@ class MainWindow(FluentWindow):
 
     def _init_window(self):
         self.setWindowTitle("Steam Show")
-        self.setWindowIcon(QIcon(os.path.join("src", "icons", "favicon.png")))
+        self.setWindowIcon(QIcon(os.path.join("src", "icons", "favicon.ico")))
         self.setFixedSize(600, 900)
 
         screen = QApplication.primaryScreen().geometry()

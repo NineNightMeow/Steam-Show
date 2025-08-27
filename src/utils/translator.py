@@ -42,7 +42,7 @@ class Translator(QObject):
         self.char_title = self.tr("ASCII Art")
         self.char_subtitle = self.tr("Generate an ASCII art from a picture")
         self.level_title = self.tr("Level Calculator")
-        self.level_subtitle = self.tr("Calculate experience point needs to level up")
+        self.level_subtitle = self.tr("Calculate experience needs to level up")
         self.log_title = self.tr("Log")
         self.log_subtitle = self.tr("Please send logs here to the developers")
         self.about_title = self.tr("About")
