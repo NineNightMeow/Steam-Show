@@ -1,5 +1,3 @@
-import os
-
 from PySide6.QtCore import (
     Qt,
     QUrl,
@@ -8,13 +6,12 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import (
     QFont,
-    QImage,
     QPainter,
     QColor,
     QBrush,
     QDesktopServices,
 )
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QWidget, QVBoxLayout
 from qfluentwidgets import (
     NavigationInterface,
     NavigationWidget,
@@ -23,9 +20,13 @@ from qfluentwidgets import (
     BodyLabel,
     CaptionLabel,
     IconWidget,
+    PrimaryPushButton,
     Action,
     RoundMenu,
     MenuAnimationType,
+    Flyout,
+    FlyoutViewBase,
+    FlyoutAnimationType,
     FluentIcon,
     isDarkTheme,
 )
@@ -104,21 +105,14 @@ class NavClassTitle(NavigationWidget):
 
 
 class NavAvatar(NavigationWidget):
-    def __init__(self, url="", alt="", parent=None):
+    def __init__(self, url="", text="", parent=None):
         super().__init__(isSelectable=False, parent=parent)
-        self.default_path = os.path.join("src", "images", "default-avatar.png")
-        self.avatar_url = url
-        self.alt_text = alt or self.t.not_logged_in
-        self.avatar = QImage()
-        self._load_avatar()
+        self.avatar = getAvatar(url)
+        self.text = text or Translator().not_logged_in
 
-    def _load_avatar(self):
-        self.avatar = getAvatar(self.avatar_url)
-
-    def updateAvatar(self, url, alt):
-        self.avatar_url = url
-        self.alt_text = alt or self.t.not_logged_in
-        self._load_avatar()
+    def updateAvatar(self, url, text):
+        self.avatar = getAvatar(url)
+        self.text = text or Translator().not_logged_in
         self.update()
 
     def paintEvent(self, e):
@@ -134,24 +128,8 @@ class NavAvatar(NavigationWidget):
             painter.setBrush(QColor(c, c, c, 10))
             painter.drawRoundedRect(self.rect(), 5, 5)
 
-        if isDarkTheme():
-            painter.setBrush(QColor(80, 80, 80))
-        else:
-            painter.setBrush(QColor(240, 240, 240))
-        painter.drawEllipse(8, 6, 24, 24)
-
         if not self.avatar.isNull():
-            mask = QImage(24, 24, QImage.Format_ARGB32)
-            mask.fill(Qt.transparent)
-
-            mask_painter = QPainter(mask)
-            mask_painter.setRenderHints(QPainter.Antialiasing)
-            mask_painter.setBrush(QBrush(self.avatar))
-            mask_painter.setPen(Qt.NoPen)
-            mask_painter.drawEllipse(0, 0, 24, 24)
-            mask_painter.end()
-
-            painter.drawImage(8, 6, mask)
+            painter.drawImage(8, 6, self.avatar)
 
         if not self.isCompacted:
             color = QColor(255, 255, 255) if isDarkTheme() else QColor(0, 0, 0)
@@ -159,7 +137,7 @@ class NavAvatar(NavigationWidget):
             font = QFont()
             font.setPixelSize(14)
             painter.setFont(font)
-            painter.drawText(QRect(44, 0, 255, 36), Qt.AlignVCenter, self.alt_text)
+            painter.drawText(QRect(44, 0, 255, 36), Qt.AlignVCenter, self.text)
 
 
 class ProfileCard(QWidget):
@@ -167,8 +145,11 @@ class ProfileCard(QWidget):
         super().__init__(parent=parent)
 
         self.avatar = AvatarWidget("", self)
+        self.avatar.setImage(getAvatar(avatar, (48, 48)))
         self.avatar.setText(nickname)
-        self.nameLabel = BodyLabel(nickname if nickname else self.t.not_logged_in, self)
+        self.nameLabel = BodyLabel(
+            nickname if nickname else Translator().not_logged_in, self
+        )
         self.idLabel = CaptionLabel(steamID if steamID else "", self)
 
         self.setFixedSize(250, 72)
@@ -178,10 +159,15 @@ class ProfileCard(QWidget):
         self.idLabel.setTextColor(QColor(96, 96, 96), QColor(206, 206, 206))
         self.idLabel.move(64, 32)
 
-        self._load_avatar(avatar)
 
-    def _load_avatar(self, avatar_url):
-        self.avatar.setImage(getAvatar(avatar_url, (48, 48)))
+class CustomFlyoutView(FlyoutViewBase):
+    def __init__(self, text: str = "", action=None, parent=None):
+        super().__init__(parent)
+        self.vBoxLayout = QVBoxLayout(self)
+        self.vBoxLayout.setSpacing(12)
+        self.vBoxLayout.setContentsMargins(20, 16, 20, 16)
+        self.vBoxLayout.addWidget(BodyLabel(text))
+        self.vBoxLayout.addWidget(action, alignment=Qt.AlignRight)
 
 
 class Navigation(NavigationInterface):
@@ -197,7 +183,7 @@ class Navigation(NavigationInterface):
 
         self.avatar = NavAvatar(
             url=User.get("avatar"),
-            alt=User.get("nickname"),
+            text=User.get("nickname"),
             parent=self,
         )
 
@@ -324,7 +310,7 @@ class Navigation(NavigationInterface):
         self.addWidget(
             routeKey="feedback",
             widget=self.feedback,
-            onClick=lambda: self.parent.openFeedback(),
+            onClick=lambda: self.openFeedback(),
             position=NavigationItemPosition.BOTTOM,
             tooltip=self.t.feedback,
         )
@@ -373,6 +359,11 @@ class Navigation(NavigationInterface):
 
         self.profile_menu.clear()
         self.profile_menu.addWidget(self.profile_card, selectable=False)
+        self.logout_action = Action(
+            FluentIcon.EMBED,
+            self.tr("Logout"),
+            triggered=lambda: self.onLogout(),
+        )
         if status:
             self.profile_menu.addActions(
                 [
@@ -385,11 +376,7 @@ class Navigation(NavigationInterface):
                             )
                         ),
                     ),
-                    Action(
-                        FluentIcon.EMBED,
-                        self.tr("Logout"),
-                        triggered=lambda: User(self.parent).logout(),
-                    ),
+                    self.logout_action,
                 ]
             )
         else:
@@ -410,3 +397,27 @@ class Navigation(NavigationInterface):
             ani=True,
             aniType=MenuAnimationType.FADE_IN_DROP_DOWN,
         ),
+
+    def openFeedback(self):
+        QDesktopServices.openUrl(
+            QUrl("https://github.com/NineNightMeow/Steam-Show/issues")
+        )
+
+    def onLogout(self):
+        self.confirm_button = PrimaryPushButton(self.tr("Logout"))
+        self.confirm_button.clicked.connect(lambda: self.parent.user.logout())
+        self.confirm_button.clicked.connect(lambda: self.confirm_flyout.hide())
+        self.confirm_button.setFixedWidth(100)
+        self.confirm_flyout = CustomFlyoutView(
+            self.tr("Are you sure to logout?"),
+            self.confirm_button,
+        )
+        Flyout.make(
+            self.confirm_flyout,
+            QPoint(
+                self.parent.pos().x() + 40,
+                self.parent.pos().y() + 30,
+            ),
+            self,
+            aniType=FlyoutAnimationType.DROP_DOWN,
+        )

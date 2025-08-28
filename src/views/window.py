@@ -1,7 +1,7 @@
 import os
 
-from PySide6.QtCore import QUrl, QSize
-from PySide6.QtGui import QIcon, QDesktopServices
+from PySide6.QtCore import QSize
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 from qfluentwidgets import (
     SplashScreen,
@@ -82,9 +82,9 @@ class MainWindow(FluentWindow):
         self.message_interface = Message()
         self.char_interface = Char()
         self.level_interface = Level()
-        self.log_interface = Log()
+        #self.log_interface = Log()
         self.about_interface = About()
-        self.login_interface = Login()
+        self.login_interface = Login(self.user, self)
 
         self.addSubInterface(self.home_interface, None, "")
         self.addSubInterface(self.convert_interface, None, "")
@@ -93,7 +93,7 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.message_interface, None, "")
         self.addSubInterface(self.char_interface, None, "")
         self.addSubInterface(self.level_interface, None, "")
-        self.addSubInterface(self.log_interface, None, "")
+        #self.addSubInterface(self.log_interface, None, "")
         self.addSubInterface(self.about_interface, None, "")
         self.addSubInterface(self.login_interface, None, "")
 
@@ -106,7 +106,7 @@ class MainWindow(FluentWindow):
             "message": self.message_interface,
             "char": self.char_interface,
             "level": self.level_interface,
-            "log": self.log_interface,
+            #"log": self.log_interface,
             "about": self.about_interface,
             "login": self.login_interface,
         }
@@ -115,11 +115,6 @@ class MainWindow(FluentWindow):
             self.navigation.setCurrentItem(interface)
         else:
             print(f"Page not found: {interface}")
-
-    def openFeedback(self):
-        QDesktopServices.openUrl(
-            QUrl("https://github.com/NineNightMeow/Steam-Show/issues")
-        )
 
     def onUserInfoUpdated(self, info):
         self.navigation.updateMenu(info.get("status"))

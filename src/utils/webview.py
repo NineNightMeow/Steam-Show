@@ -1,11 +1,14 @@
-from PySide6.QtCore import Qt, QUrl, QStandardPaths
+import os
+
+from PySide6.QtCore import Qt, QUrl
 from PySide6.QtWebEngineCore import (
     QWebEnginePage,
     QWebEngineProfile,
     QWebEngineSettings,
 )
 from qframelesswindow.webengine import FramelessWebEngineView
-import os
+
+from src.app import App
 
 
 class Webview(FramelessWebEngineView):
@@ -24,8 +27,8 @@ class Webview(FramelessWebEngineView):
 
     def _setup_persistent_profile(self):
         if Webview._shared_profile is None:
-            data_dir = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
-            storage_path = os.path.join(data_dir, "webengine_data")
+            data_dir = App.getPath("data")
+            storage_path = os.path.join(data_dir, "webengine")
 
             os.makedirs(storage_path, exist_ok=True)
 
@@ -57,9 +60,3 @@ class Webview(FramelessWebEngineView):
             if callback:
                 callback(None)
             return None
-
-    @classmethod
-    def cleanup(cls):
-        if cls._shared_profile:
-            cls._shared_profile.deleteLater()
-            cls._shared_profile = None

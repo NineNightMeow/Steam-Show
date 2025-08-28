@@ -3,7 +3,6 @@ import json
 import re
 
 from PySide6.QtCore import QObject, Signal
-from qfluentwidgets import Dialog
 
 from src.utils.webview import Webview
 from src.app import App
@@ -82,20 +81,15 @@ class User(QObject):
 
     # ---------------- 用户操作 ----------------
     def login(self) -> bool:
-        if self.parent:
-            self.parent.switchInterface("login")
-        return True
+        self.parent.switchInterface("login")
+        self.parent.login_interface.login()
 
     def logout(self) -> None:
-        dialog = Dialog("Confirm Logout", "Are you sure to logout?", self.parent)
-        if dialog.exec():
-            self.webview.run("Logout();")
-            self._clear_user_info()
-            self.login()
+        self.parent.switchInterface("login")
+        self.parent.login_interface.logout()
 
     # ---------------- 获取信息 ----------------
     def getInfo(self):
-        print(f"⚡ getInfo() called. Current URL: {self._current_url}")
         if "store.steampowered.com/account/" in self._current_url:
             if self._fetching_info:
                 return
@@ -190,6 +184,7 @@ class User(QObject):
                 "background": "",
             }
         )
+        self.save_user_info()
         self.send_signal()
         print("Successfully cleared user info")
 
@@ -217,7 +212,7 @@ class User(QObject):
     # ---------------- 事件回调 ----------------
     def onUrlChanged(self, url):
         self._current_url = url.toString()
-        if "login/" in self._current_url or "login=true" in self._current_url:
+        if "login/" in self._current_url and User._info["status"]:
             self._clear_user_info()
 
     def onLoadFinished(self, success: bool):

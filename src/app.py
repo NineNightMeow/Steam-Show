@@ -11,6 +11,7 @@ class App:
         QStandardPaths.writableLocation(QStandardPaths.AppDataLocation), name
     )
     dirs = [
+        ["data", os.path.join(appDataDir, "data")],
         ["config", os.path.join(appDataDir, "config")],
         ["cache", os.path.join(appDataDir, "cache")],
         ["temp", os.path.join(appDataDir, "temp")],

@@ -1,5 +1,7 @@
-from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
 from qfluentwidgets import (
+    BodyLabel,
     PushButton,
     PrimaryPushButton,
     DropDownPushButton,
@@ -11,6 +13,7 @@ from qfluentwidgets import (
 from src.views.interface import Interface, InfoTip, Separator
 from src.utils.translator import Translator
 from src.utils.webview import Webview
+from src.user import User
 
 
 class Deployment(Interface):
@@ -91,16 +94,34 @@ class Deployment(Interface):
         self.tool_bar.addWidget(self.submit_button)
 
         # Webview
-        self.webview = Webview(self.view)
+        self.webview_area = QWidget(self)
+        self.webview_layout = QVBoxLayout(self.webview_area)
+        self.webview_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.webview_banned = QWidget(self)
+        self.banned_layout = QVBoxLayout(self.webview_banned)
+        self.banned_tip = BodyLabel(self.tr("You are not logged in yet"))
+        self.banned_tip.setAlignment(Qt.AlignCenter)
+        self.banned_layout.addWidget(self.banned_tip)
+        self.login_button = PushButton(self.tr("Go to Login"))
+        self.login_button.clicked.connect(self.goLogin)
+        self.login_button.setFixedWidth(100)
+        self.banned_layout.addWidget(self.login_button, alignment=Qt.AlignCenter)
+        self.webview_layout.addWidget(self.webview_banned, alignment=Qt.AlignCenter)
+
+        self.webview = Webview(self.webview_area)
         self.webview.loadFinished.connect(self.onLoaded)
+        self.webview_layout.addWidget(self.webview)
 
         self.defaultUrl = "https://steamcommunity.com/sharedfiles/edititem/767/3/"
-        self.webview.open(self.defaultUrl)
 
         layout.addLayout(self.tool_bar)
-        layout.addWidget(self.webview, 1)
+        layout.addWidget(self.webview_area, 1)
 
         self.view.setLayout(layout)
+
+        User(self).infoUpdated.connect(self.checkLogin)
+        self.checkLogin(User)
 
     def onLoaded(self):
         self.webview.urlChanged.connect(self.onUrlChanged)
@@ -112,20 +133,14 @@ class Deployment(Interface):
 
     def onUrlChanged(self, url):
         if url != self.defaultUrl:
-            if "https://steamcommunity.com/login" in url:
-                InfoTip(
-                    type="error",
-                    title=self.tr("Please login first"),
-                    parent=self.window,
-                )
-            else:
+            if not "https://steamcommunity.com/login" in url:
                 InfoTip(
                     type="success",
                     title=self.tr("Successfully uploaded"),
                     message=self.tr("Reloading"),
                     parent=self.window,
                 )
-            self.webview.open(self.defaultUrl)
+                self.webview.open(self.defaultUrl)
 
     def onReload(self):
         self.webview.reload()
@@ -146,3 +161,23 @@ class Deployment(Interface):
 
     def onSubmit(self):
         self.webview.run("SubmitItem();")
+
+    def goLogin(self):
+        self.window.switchInterface("login")
+
+    def checkLogin(self, info):
+        if info.get("status"):
+            self.webview.open(self.defaultUrl)
+            self.webview.show()
+            self.webview_banned.hide()
+            self.refresh_button.setEnabled(True)
+            self.upload_button.setEnabled(True)
+            self.submit_button.setEnabled(True)
+            self.command_menu.setEnabled(True)
+        else:
+            self.webview.hide()
+            self.webview_banned.show()
+            self.refresh_button.setEnabled(False)
+            self.upload_button.setEnabled(False)
+            self.submit_button.setEnabled(False)
+            self.command_menu.setEnabled(False)

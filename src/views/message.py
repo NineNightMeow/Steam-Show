@@ -1,6 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter
 from qfluentwidgets import (
+    BodyLabel,
     PushButton,
     PrimaryPushButton,
     TogglePushButton,
@@ -11,6 +12,7 @@ from qfluentwidgets import (
 from src.views.interface import Interface, InfoTip
 from src.utils.translator import Translator
 from src.utils.webview import Webview
+from src.user import User
 
 
 class Message(Interface):
@@ -45,18 +47,36 @@ class Message(Interface):
         self.edit_area = PlainTextEdit()
         self.edit_area.textChanged.connect(self.edit)
 
+        self.webview_area = QWidget(self)
+        self.webview_layout = QVBoxLayout(self.webview_area)
+        self.webview_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.webview_banned = QWidget(self)
+        self.banned_layout = QVBoxLayout(self.webview_banned)
+        self.banned_tip = BodyLabel(self.tr("You are not logged in yet"))
+        self.banned_tip.setAlignment(Qt.AlignCenter)
+        self.banned_layout.addWidget(self.banned_tip)
+        self.login_button = PushButton(self.tr("Go to Login"))
+        self.login_button.clicked.connect(self.goLogin)
+        self.login_button.setFixedWidth(100)
+        self.banned_layout.addWidget(self.login_button, alignment=Qt.AlignCenter)
+        self.webview_layout.addWidget(self.webview_banned, alignment=Qt.AlignCenter)
+
         self.webview = Webview(self)
         self.webview.loadFinished.connect(self.onLoaded)
-        self.webview.open("https://steamcommunity.com/friends")
+        self.webview_layout.addWidget(self.webview)
 
         self.splitter.addWidget(self.edit_area)
-        self.splitter.addWidget(self.webview)
+        self.splitter.addWidget(self.webview_area)
         self.splitter.setSizes([300, 1000])
 
         layout.addWidget(self.toolbar)
         layout.addWidget(self.splitter, 1)
 
         self.view.setLayout(layout)
+
+        User(self).infoUpdated.connect(self.checkLogin)
+        self.checkLogin(User)
 
     def toggleSelectAll(self, checked):
         if not hasattr(self, "webview"):
@@ -78,9 +98,7 @@ class Message(Interface):
             InfoTip(type="warning", title=self.tr("Please select at least one friend"))
             return
         try:
-            self.webview.run(
-                """document.querySelector('#comment_submit').click();"""
-            )
+            self.webview.run("""document.querySelector('#comment_submit').click();""")
 
             InfoTip(title=self.tr("Message sent"))
         except:
@@ -141,3 +159,23 @@ class Message(Interface):
         document.querySelector(".responsive_page_content").style.paddingTop = "0";
         """
         self.webview.run(script)
+
+    def goLogin(self):
+        self.window().switchInterface("login")
+
+    def checkLogin(self, info):
+        if info.get("status"):
+            self.webview.open("https://steamcommunity.com/friends")
+            self.webview.show()
+            self.webview_banned.hide()
+            self.edit_area.setEnabled(True)
+            self.select_all_button.setEnabled(True)
+            self.inverse_button.setEnabled(True)
+            self.send_button.setEnabled(True)
+        else:
+            self.webview.hide()
+            self.webview_banned.show()
+            self.edit_area.setEnabled(False)
+            self.select_all_button.setEnabled(False)
+            self.inverse_button.setEnabled(False)
+            self.send_button.setEnabled(False)
